@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimize DeFi - Holdings</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #e4e4e7;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        /* AI Chat Panel (Left Side) */
+        .chat-panel {
+            width: 350px;
+            background: #18181b;
+            border-right: 1px solid #27272a;
+            display: flex;
+            flex-direction: column;
+            transition: margin-left 0.3s ease;
+        }
+        
+        .chat-panel.collapsed {
+            margin-left: -350px;
+        }
+        
+        .chat-header {
+            padding: 20px;
+            border-bottom: 1px solid #27272a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .minimize-button {
+            background: none;
+            border: none;
+            color: #71717a;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .minimize-button:hover {
+            background: #27272a;
+            color: #e4e4e7;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .message {
+            margin-bottom: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            background: #09090b;
+            font-size: 14px;
+        }
+        
+        .message.ai {
+            background: #1e293b;
+        }
+        
+        /* Suggested Actions Section */
+        .suggested-actions {
+            padding: 20px;
+            border-top: 1px solid #27272a;
+            border-bottom: 1px solid #27272a;
+        }
+        
+        .suggested-actions-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #a1a1aa;
+        }
+        
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .action-button {
+            padding: 8px 16px;
+            background: #27272a;
+            border: 1px solid #3f3f46;
+            border-radius: 8px;
+            color: #e4e4e7;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        
+        .action-button:hover {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            transform: translateY(-1px);
+        }
+        
+        .chat-input {
+            padding: 20px;
+        }
+        
+        .chat-input input {
+            width: 100%;
+            padding: 12px;
+            background: #09090b;
+            border: 1px solid #27272a;
+            border-radius: 8px;
+            color: #e4e4e7;
+            font-size: 14px;
+        }
+        
+        /* Main Content Area */
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Header */
+        .header {
+            background: #18181b;
+            padding: 16px 32px;
+            border-bottom: 1px solid #27272a;
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+        
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(to right, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            white-space: nowrap;
+        }
+        
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            gap: 4px;
+            flex: 1;
+        }
+        
+        .nav-tab {
+            padding: 8px 16px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: #71717a;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        
+        .nav-tab:hover {
+            background: #27272a;
+            color: #e4e4e7;
+        }
+        
+        .nav-tab.active {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        /* Wallet Section */
+        .wallet-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-left: auto;
+        }
+        
+        .wallet-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            background: #09090b;
+            border: 1px solid #27272a;
+            border-radius: 8px;
+        }
+        
+        .wallet-button {
+            padding: 8px 20px;
+            background: #3b82f6;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        /* Main Content Layout */
+        .content-area {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+        
+        /* Holdings Content */
+        .holdings-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px;
+        }
+        
+        /* Holdings Overview */
+        .overview-grid {
+            display: grid;
+            grid-template-columns: 3fr 2fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        /* Treemap Container */
+        .treemap-card {
+            background: #18181b;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #27272a;
+        }
+        
+        .treemap-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .treemap-content {
+            height: 400px;
+            background: #09090b;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #71717a;
+        }
+        
+        /* Improvement Suggestions */
+        .suggestions-card {
+            background: #18181b;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #27272a;
+        }
+        
+        .suggestion-item {
+            padding: 16px;
+            background: #09090b;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        
+        .suggestion-item:hover {
+            border-color: #3b82f6;
+        }
+        
+        .suggestion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .suggestion-impact {
+            padding: 4px 8px;
+            background: #10b981;
+            color: #0a0a0a;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .suggestion-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .suggestion-description {
+            font-size: 13px;
+            color: #71717a;
+            line-height: 1.5;
+        }
+        
+        /* Chain Distribution */
+        .chain-section {
+            margin-bottom: 32px;
+        }
+        
+        .chain-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+        
+        .chain-card {
+            background: #18181b;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #27272a;
+            text-align: center;
+        }
+        
+        .chain-icon {
+            width: 48px;
+            height: 48px;
+            background: #3b82f6;
+            border-radius: 12px;
+            margin: 0 auto 16px;
+        }
+        
+        .chain-name {
+            font-size: 14px;
+            color: #71717a;
+            margin-bottom: 8px;
+        }
+        
+        .chain-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .chain-percentage {
+            font-size: 14px;
+            color: #71717a;
+        }
+        
+        /* Holdings Table */
+        .holdings-table-section {
+            background: #18181b;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #27272a;
+        }
+        
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .filter-button {
+            padding: 6px 12px;
+            background: #09090b;
+            border: 1px solid #27272a;
+            border-radius: 6px;
+            color: #e4e4e7;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .filter-button.active {
+            background: #3b82f6;
+            border-color: #3b82f6;
+        }
+        
+        .holdings-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .holdings-table th {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #27272a;
+            color: #71717a;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .holdings-table td {
+            padding: 16px 12px;
+            border-bottom: 1px solid #27272a;
+        }
+        
+        .token-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .token-icon {
+            width: 36px;
+            height: 36px;
+            background: #3b82f6;
+            border-radius: 50%;
+        }
+        
+        .token-details {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .token-symbol {
+            font-weight: 600;
+        }
+        
+        .token-name {
+            font-size: 12px;
+            color: #71717a;
+        }
+        
+        .performance-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .performance-badge.positive {
+            background: #10b98120;
+            color: #10b981;
+        }
+        
+        .performance-badge.negative {
+            background: #ef444420;
+            color: #ef4444;
+        }
+        
+        /* Toggle Button */
+        .chat-toggle {
+            position: fixed;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-left: none;
+            padding: 12px 8px;
+            cursor: pointer;
+            z-index: 100;
+            transition: left 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .chat-toggle.shifted {
+            left: 350px;
+        }
+        
+        .toggle-text {
+            writing-mode: vertical-rl;
+            font-size: 12px;
+            color: #71717a;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <!-- Chat Toggle Button -->
+    <button class="chat-toggle shifted" onclick="toggleChat()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M9.5 13a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm0-5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm0-5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>
+        </svg>
+        <span class="toggle-text">AI Assistant</span>
+    </button>
+    
+    <div class="app-container">
+        <!-- AI Chat Panel (Left Side) -->
+        <div class="chat-panel" id="chatPanel">
+            <div class="chat-header">
+                <h2>AI Assistant</h2>
+                <button class="minimize-button" onclick="toggleChat()" title="Minimize">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="chat-messages">
+                <div class="message ai">
+                    <strong>AI:</strong> Looking at your holdings, I notice you have significant idle USDC that could be earning yield. Your largest position (ETH) has appreciated 127% since purchase.
+                </div>
+                <div class="message">
+                    <strong>You:</strong> Which of my holdings are underperforming?
+                </div>
+                <div class="message ai">
+                    <strong>AI:</strong> Based on risk-adjusted returns, here are your underperforming assets:
+                    <br><br>
+                    1. <strong>LINK (-5.2%)</strong> - Underperforming vs sector by 12%
+                    <br><br>
+                    2. <strong>UNI (flat)</strong> - High volatility with no gains
+                    <br><br>
+                    3. <strong>Idle USDC ($5,432)</strong> - Missing 4.2% APY opportunity
+                    <br><br>
+                    Consider rotating LINK into higher momentum assets or staking your idle stables for passive income.
+                </div>
+            </div>
+            
+            <!-- Suggested Actions -->
+            <div class="suggested-actions">
+                <div class="suggested-actions-title">Suggested Actions</div>
+                <div class="action-buttons">
+                    <button class="action-button">💎 Find Gems</button>
+                    <button class="action-button">🚀 Boost Yield</button>
+                    <button class="action-button">📉 Trim Losers</button>
+                    <button class="action-button">⚖️ Rebalance</button>
+                    <button class="action-button">🔄 Consolidate</button>
+                </div>
+            </div>
+            
+            <div class="chat-input">
+                <input type="text" placeholder="Ask about holdings...">
+            </div>
+        </div>
+        
+        <!-- Main Wrapper -->
+        <div class="main-wrapper">
+            <!-- Header -->
+            <header class="header">
+                <div class="logo">Optimize DeFi</div>
+                
+                <!-- Navigation Tabs -->
+                <nav class="nav-tabs">
+                    <button class="nav-tab">Overview</button>
+                    <button class="nav-tab">Analytics</button>
+                    <button class="nav-tab active">Holdings</button>
+                    <button class="nav-tab">Swap</button>
+                    <button class="nav-tab">Rebalance</button>
+                </nav>
+                
+                <!-- Wallet Section -->
+                <div class="wallet-section">
+                    <div class="wallet-info">
+                        <div style="width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></div>
+                        <span>0x1234...5678</span>
+                    </div>
+                    <button class="wallet-button">Disconnect</button>
+                </div>
+            </header>
+            
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Holdings Content -->
+                <div class="holdings-content">
+                    <!-- Holdings Overview -->
+                    <div class="overview-grid">
+                        <!-- Treemap Visualization -->
+                        <div class="treemap-card">
+                            <div class="treemap-header">
+                                <h3 style="font-size: 18px; font-weight: 600;">Portfolio Composition</h3>
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="filter-button active">Value</button>
+                                    <button class="filter-button">Count</button>
+                                    <button class="filter-button">Performance</button>
+                                </div>
+                            </div>
+                            <div class="treemap-content">
+                                [Interactive treemap showing holdings by size, colored by performance]
+                            </div>
+                        </div>
+                        
+                        <!-- Improvement Suggestions -->
+                        <div class="suggestions-card">
+                            <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">Optimization Opportunities</h3>
+                            
+                            <div class="suggestion-item">
+                                <div class="suggestion-header">
+                                    <span class="suggestion-impact">+$847/yr</span>
+                                </div>
+                                <div class="suggestion-title">Deploy Idle Stablecoins</div>
+                                <div class="suggestion-description">
+                                    Move $5,432 USDC to Aave V3 on Polygon for 4.2% APY with instant withdrawals
+                                </div>
+                            </div>
+                            
+                            <div class="suggestion-item">
+                                <div class="suggestion-header">
+                                    <span class="suggestion-impact" style="background: #f59e0b;">SAVE GAS</span>
+                                </div>
+                                <div class="suggestion-title">Consolidate Small Positions</div>
+                                <div class="suggestion-description">
+                                    Merge 5 positions under $100 to save ~$45 in future transaction fees
+                                </div>
+                            </div>
+                            
+                            <div class="suggestion-item">
+                                <div class="suggestion-header">
+                                    <span class="suggestion-impact">+15% APY</span>
+                                </div>
+                                <div class="suggestion-title">Upgrade ETH Position</div>
+                                <div class="suggestion-description">
+                                    Stake 2 ETH for stETH to earn 3.8% APY while maintaining liquidity
+                                </div>
+                            </div>
+                            
+                            <div class="suggestion-item">
+                                <div class="suggestion-header">
+                                    <span class="suggestion-impact" style="background: #ef4444;">-32% RISK</span>
+                                </div>
+                                <div class="suggestion-title">Reduce Correlation Risk</div>
+                                <div class="suggestion-description">
+                                    ETH and MATIC show 0.82 correlation. Diversify into uncorrelated assets
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Chain Distribution -->
+                    <div class="chain-section">
+                        <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">Chain Distribution</h3>
+                        <div class="chain-grid">
+                            <div class="chain-card">
+                                <div class="chain-icon" style="background: #627eea;"></div>
+                                <div class="chain-name">Ethereum</div>
+                                <div class="chain-value">$15,234</div>
+                                <div class="chain-percentage">61.3% of portfolio</div>
+                            </div>
+                            <div class="chain-card">
+                                <div class="chain-icon" style="background: #8247e5;"></div>
+                                <div class="chain-name">Polygon</div>
+                                <div class="chain-value">$6,421</div>
+                                <div class="chain-percentage">25.8% of portfolio</div>
+                            </div>
+                            <div class="chain-card">
+                                <div class="chain-icon" style="background: #ff0420;"></div>
+                                <div class="chain-name">Optimism</div>
+                                <div class="chain-value">$2,198</div>
+                                <div class="chain-percentage">8.8% of portfolio</div>
+                            </div>
+                            <div class="chain-card">
+                                <div class="chain-icon" style="background: #28a0f0;"></div>
+                                <div class="chain-name">Arbitrum</div>
+                                <div class="chain-value">$1,000</div>
+                                <div class="chain-percentage">4.0% of portfolio</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Holdings Table -->
+                    <div class="holdings-table-section">
+                        <div class="table-header">
+                            <h3 style="font-size: 18px; font-weight: 600;">Detailed Holdings</h3>
+                            <div class="filter-buttons">
+                                <button class="filter-button active">All Assets</button>
+                                <button class="filter-button">Large Caps</button>
+                                <button class="filter-button">Stables</button>
+                                <button class="filter-button">DeFi</button>
+                            </div>
+                        </div>
+                        
+                        <table class="holdings-table">
+                            <thead>
+                                <tr>
+                                    <th>Asset</th>
+                                    <th>Chain</th>
+                                    <th>Balance</th>
+                                    <th>Value</th>
+                                    <th>Avg Cost</th>
+                                    <th>P/L</th>
+                                    <th>24h</th>
+                                    <th>Allocation</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="token-info">
+                                            <div class="token-icon" style="background: #627eea;"></div>
+                                            <div class="token-details">
+                                                <span class="token-symbol">ETH</span>
+                                                <span class="token-name">Ethereum</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>Ethereum</td>
+                                    <td>3.245</td>
+                                    <td>$10,234.56</td>
+                                    <td>$1,421</td>
+                                    <td><span class="performance-badge positive">+127.3%</span></td>
+                                    <td><span class="positive">+5.2%</span></td>
+                                    <td>41.2%</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="token-info">
+                                            <div class="token-icon" style="background: #2775ca;"></div>
+                                            <div class="token-details">
+                                                <span class="token-symbol">USDC</span>
+                                                <span class="token-name">USD Coin</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>Polygon</td>
+                                    <td>5,432.10</td>
+                                    <td>$5,432.10</td>
+                                    <td>$1.00</td>
+                                    <td><span class="performance-badge">0.0%</span></td>
+                                    <td>0.0%</td>
+                                    <td>21.9%</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="token-info">
+                                            <div class="token-icon" style="background: #8247e5;"></div>
+                                            <div class="token-details">
+                                                <span class="token-symbol">MATIC</span>
+                                                <span class="token-name">Polygon</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>Polygon</td>
+                                    <td>4,521.00</td>
+                                    <td>$3,842.85</td>
+                                    <td>$0.68</td>
+                                    <td><span class="performance-badge positive">+25.0%</span></td>
+                                    <td><span class="positive">+8.3%</span></td>
+                                    <td>15.5%</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="token-info">
+                                            <div class="token-icon" style="background: #ff0420;"></div>
+                                            <div class="token-details">
+                                                <span class="token-symbol">OP</span>
+                                                <span class="token-name">Optimism</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>Optimism</td>
+                                    <td>1,100.00</td>
+                                    <td>$2,198.00</td>
+                                    <td>$1.85</td>
+                                    <td><span class="performance-badge positive">+8.1%</span></td>
+                                    <td><span class="positive">+3.2%</span></td>
+                                    <td>8.8%</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="token-info">
+                                            <div class="token-icon" style="background: #375bd2;"></div>
+                                            <div class="token-details">
+                                                <span class="token-symbol">LINK</span>
+                                                <span class="token-name">Chainlink</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>Ethereum</td>
+                                    <td>95.00</td>
+                                    <td>$1,425.00</td>
+                                    <td>$15.80</td>
+                                    <td><span class="performance-badge negative">-5.2%</span></td>
+                                    <td><span class="negative">-2.1%</span></td>
+                                    <td>5.7%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function toggleChat() {
+            const chatPanel = document.getElementById('chatPanel');
+            const toggleButton = document.querySelector('.chat-toggle');
+            
+            chatPanel.classList.toggle('collapsed');
+            toggleButton.classList.toggle('shifted');
+        }
+        
+        // Handle navigation
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                if (this.parentElement.classList.contains('nav-tabs')) {
+                    document.querySelectorAll('.nav-tabs .nav-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

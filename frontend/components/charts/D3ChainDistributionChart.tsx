@@ -30,10 +30,11 @@ export function D3ChainDistributionChart({ data }: D3ChainDistributionChartProps
   const tooltipRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!svgRef.current || data.length === 0) return
+    const svg = svgRef.current
+    if (!svg || data.length === 0) return
 
     // Clear previous chart
-    d3.select(svgRef.current).selectAll('*').remove()
+    d3.select(svg).selectAll('*').remove()
 
     // Set dimensions
     const margin = { top: 20, right: 30, bottom: 60, left: 60 }
@@ -41,11 +42,11 @@ export function D3ChainDistributionChart({ data }: D3ChainDistributionChartProps
     const height = 300 - margin.top - margin.bottom
 
     // Create SVG
-    const svg = d3.select(svgRef.current)
+    const svgSelection = d3.select(svg)
       .attr('width', width + margin.left + margin.right)
       .attr('height', height + margin.top + margin.bottom)
 
-    const g = svg.append('g')
+    const g = svgSelection.append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`)
 
     // Create scales
@@ -219,7 +220,7 @@ export function D3ChainDistributionChart({ data }: D3ChainDistributionChartProps
     })
 
     // Add legend
-    const legend = svg.append('g')
+    const legend = svgSelection.append('g')
       .attr('class', 'legend')
       .attr('transform', `translate(${width + margin.left - 100}, ${margin.top})`)
 
@@ -243,7 +244,7 @@ export function D3ChainDistributionChart({ data }: D3ChainDistributionChartProps
 
     // Cleanup
     return () => {
-      d3.select(svgRef.current).selectAll('*').remove()
+      d3.select(svg).selectAll('*').remove()
     }
   }, [data])
 

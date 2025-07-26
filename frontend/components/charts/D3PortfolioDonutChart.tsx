@@ -16,10 +16,11 @@ export function D3PortfolioDonutChart({ tokens, totalValue }: D3PortfolioDonutCh
   const tooltipRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!svgRef.current || tokens.length === 0) return
+    const svg = svgRef.current
+    if (!svg || tokens.length === 0) return
 
     // Clear previous chart
-    d3.select(svgRef.current).selectAll('*').remove()
+    d3.select(svg).selectAll('*').remove()
 
     // Set dimensions
     const width = 400
@@ -29,13 +30,13 @@ export function D3PortfolioDonutChart({ tokens, totalValue }: D3PortfolioDonutCh
     const innerRadius = radius * 0.6
 
     // Create SVG
-    const svg = d3.select(svgRef.current)
+    const svgSelection = d3.select(svg)
       .attr('width', width)
       .attr('height', height)
       .attr('viewBox', `0 0 ${width} ${height}`)
       .attr('preserveAspectRatio', 'xMidYMid meet')
 
-    const g = svg.append('g')
+    const g = svgSelection.append('g')
       .attr('transform', `translate(${width / 2}, ${height / 2})`)
 
     // Prepare data - aggregate by symbol and take top 8
@@ -177,7 +178,7 @@ export function D3PortfolioDonutChart({ tokens, totalValue }: D3PortfolioDonutCh
 
     // Cleanup
     return () => {
-      d3.select(svgRef.current).selectAll('*').remove()
+      d3.select(svg).selectAll('*').remove()
     }
   }, [tokens, totalValue])
 

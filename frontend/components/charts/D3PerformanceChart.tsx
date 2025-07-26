@@ -20,10 +20,11 @@ export function D3PerformanceChart({ data, height = 400 }: D3PerformanceChartPro
   const tooltipRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!svgRef.current || data.length === 0) return
+    const svg = svgRef.current
+    if (!svg || data.length === 0) return
 
     // Clear previous chart
-    d3.select(svgRef.current).selectAll('*').remove()
+    d3.select(svg).selectAll('*').remove()
 
     // Set dimensions
     const margin = { top: 20, right: 30, bottom: 40, left: 60 }
@@ -31,18 +32,18 @@ export function D3PerformanceChart({ data, height = 400 }: D3PerformanceChartPro
     const actualHeight = height - margin.top - margin.bottom
 
     // Create SVG
-    const svg = d3.select(svgRef.current)
+    const svgSelection = d3.select(svg)
       .attr('width', width + margin.left + margin.right)
       .attr('height', height)
 
     // Create clip path for zoom
-    svg.append('defs').append('clipPath')
+    svgSelection.append('defs').append('clipPath')
       .attr('id', 'clip')
       .append('rect')
       .attr('width', width)
       .attr('height', actualHeight)
 
-    const g = svg.append('g')
+    const g = svgSelection.append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`)
 
     // Create scales
@@ -71,7 +72,7 @@ export function D3PerformanceChart({ data, height = 400 }: D3PerformanceChartPro
       .curve(d3.curveMonotoneX)
 
     // Add gradient
-    const gradient = svg.append('defs').append('linearGradient')
+    const gradient = svgSelection.append('defs').append('linearGradient')
       .attr('id', 'area-gradient')
       .attr('gradientUnits', 'userSpaceOnUse')
       .attr('x1', 0).attr('y1', yScale(d3.min(data, d => d.value)!))
@@ -263,7 +264,7 @@ export function D3PerformanceChart({ data, height = 400 }: D3PerformanceChartPro
     overlay.call(zoom)
 
     // Add reset button
-    const resetButton = svg.append('g')
+    const resetButton = svgSelection.append('g')
       .attr('transform', `translate(${width + margin.left - 50}, ${margin.top})`)
       .style('cursor', 'pointer')
       .on('click', function() {
@@ -288,15 +289,10 @@ export function D3PerformanceChart({ data, height = 400 }: D3PerformanceChartPro
 
     // Cleanup
     return () => {
-      d3.select(svgRef.current).selectAll('*').remove()
+      d3.select(svg).selectAll('*').remove()
     }
   }, [data, height])
 
-  // Generate sample data if none provided
-  const sampleData = data.length > 0 ? data : Array.from({ length: 30 }, (_, i) => ({
-    date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
-    value: 10000 + Math.random() * 5000 + i * 100 + Math.sin(i / 3) * 1000
-  }))
 
   return (
     <Card className="p-6 relative">

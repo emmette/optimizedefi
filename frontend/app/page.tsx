@@ -28,11 +28,74 @@ const mockPortfolioData = {
   ]
 }
 
+// Mock recent activity data
+const mockRecentActivity = [
+  {
+    id: 1,
+    type: 'swap',
+    title: 'Swapped ETH → USDC',
+    time: '2 hours ago',
+    chain: 'Ethereum',
+    details: 'Via 1inch Fusion+',
+    amounts: [
+      { value: '-0.5 ETH', positive: false },
+      { value: '+1,578 USDC', positive: true }
+    ]
+  },
+  {
+    id: 2,
+    type: 'receive',
+    title: 'Received MATIC',
+    time: '5 hours ago',
+    chain: 'Polygon',
+    details: 'From wallet',
+    amounts: [
+      { value: '+2,500 MATIC', positive: true }
+    ]
+  },
+  {
+    id: 3,
+    type: 'rebalance',
+    title: 'Portfolio Rebalanced',
+    time: '1 day ago',
+    chain: 'Multiple',
+    details: 'AI-optimized allocation',
+    amounts: [
+      { value: '4 transactions', positive: null }
+    ]
+  },
+  {
+    id: 4,
+    type: 'yield',
+    title: 'Yield Harvested',
+    time: '2 days ago',
+    chain: 'Optimism',
+    details: 'From AAVE v3',
+    amounts: [
+      { value: '+125.43 USDC', positive: true }
+    ]
+  },
+  {
+    id: 5,
+    type: 'swap',
+    title: 'Swapped USDT → DAI',
+    time: '3 days ago',
+    chain: 'Arbitrum',
+    details: 'Via Uniswap V3',
+    amounts: [
+      { value: '-1,000 USDT', positive: false },
+      { value: '+999.8 DAI', positive: true }
+    ]
+  }
+]
+
 export default function OverviewPage() {
   const isPositiveChange = mockPortfolioData.change24h > 0
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="flex gap-6 h-full">
+      {/* Main Content */}
+      <div className="flex-1 p-6 space-y-6 overflow-y-auto">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Portfolio Overview</h1>
@@ -135,6 +198,42 @@ export default function OverviewPage() {
           </button>
         </div>
       </Card>
+      </div>
+
+      {/* Recent Activity Panel */}
+      <div className="w-80 bg-card border-l border-border flex flex-col h-full">
+        <div className="p-6 border-b border-border flex justify-between items-center">
+          <h3 className="text-lg font-semibold">Recent Activity</h3>
+          <button className="text-sm text-primary hover:underline">View All</button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          {mockRecentActivity.map((activity) => (
+            <div key={activity.id} className="space-y-2 pb-4 border-b border-border last:border-0">
+              <div className="font-medium">{activity.title}</div>
+              <div className="text-sm text-muted-foreground">
+                {activity.time} • {activity.chain}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">{activity.details}</span>
+                <div className="text-right space-y-1">
+                  {activity.amounts.map((amount, idx) => (
+                    <div 
+                      key={idx} 
+                      className={`text-sm font-medium ${
+                        amount.positive === true ? 'text-green-500' : 
+                        amount.positive === false ? 'text-red-500' : 
+                        'text-foreground'
+                      }`}
+                    >
+                      {amount.value}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

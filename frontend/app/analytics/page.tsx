@@ -6,7 +6,6 @@ import { PerformanceChart } from '@/components/charts/PerformanceChart'
 import { 
   TrendingUp, 
   TrendingDown, 
-  DollarSign, 
   Activity, 
   PieChart,
   BarChart3,
@@ -174,7 +173,7 @@ export default function AnalyticsPage() {
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveMetric(tab.id as any)}
+              onClick={() => setActiveMetric(tab.id as 'portfolio' | 'transactions' | 'yield' | 'gas')}
               className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
                 activeMetric === tab.id
                   ? 'border-primary text-foreground'

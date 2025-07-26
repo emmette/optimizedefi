@@ -8,11 +8,9 @@ import {
   TrendingUp, 
   AlertTriangle,
   CheckCircle,
-  ChevronRight,
   Info,
   Settings,
   RefreshCw,
-  DollarSign,
   ArrowRight
 } from 'lucide-react'
 

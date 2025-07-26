@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Bot, User, WifiOff, Wifi } from 'lucide-react'
+import { Send, Bot, User } from 'lucide-react'
 import { useChat } from '@/hooks/useChat'
 import { useAccount } from 'wagmi'
 

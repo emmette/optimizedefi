@@ -1,6 +1,6 @@
 'use client'
 
-import { useAccount, useConnect, useDisconnect, useEnsAvatar, useEnsName } from 'wagmi'
+import { useAccount, useConnect, useDisconnect, useEnsName } from 'wagmi'
 import { useState } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Wallet, ChevronDown, LogOut, Copy, ExternalLink } from 'lucide-react'
@@ -10,7 +10,7 @@ export function ConnectButton() {
   const { connect, connectors, isPending } = useConnect()
   const { disconnect } = useDisconnect()
   const { data: ensName } = useEnsName({ address })
-  const { data: ensAvatar } = useEnsAvatar({ name: ensName ?? undefined })
+  // const { data: ensAvatar } = useEnsAvatar({ name: ensName ?? undefined })
   const [showConnectors, setShowConnectors] = useState(false)
   const [showAccountMenu, setShowAccountMenu] = useState(false)
 

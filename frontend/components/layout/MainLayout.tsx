@@ -14,9 +14,6 @@ import {
   ArrowLeftRight,
   MessageSquare,
   ChevronLeft,
-  Settings,
-  HelpCircle,
-  Bell,
   Menu,
   X
 } from 'lucide-react'

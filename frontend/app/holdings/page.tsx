@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import { Card } from '@/components/ui/Card'
-import { Search, Filter, ArrowUpDown, Info, TrendingUp, TrendingDown } from 'lucide-react'
-import { usePortfolio } from '@/hooks/usePortfolio'
-import { useAccount } from 'wagmi'
+import { Search, TrendingUp, TrendingDown } from 'lucide-react'
+// import { usePortfolio } from '@/hooks/usePortfolio'
+// import { useAccount } from 'wagmi'
 
 // Mock holdings data
 const mockHoldings = [
@@ -110,8 +110,9 @@ export default function HoldingsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'value' | 'change' | 'allocation'>('value')
   const [filterChain, setFilterChain] = useState<string>('all')
-  const { isConnected } = useAccount()
-  const { data: portfolio, isLoading } = usePortfolio()
+  // TODO: Implement portfolio data integration
+  // const { isConnected } = useAccount()
+  // const { data: portfolio, isLoading } = usePortfolio()
 
   // Filter and sort holdings
   const filteredHoldings = mockHoldings

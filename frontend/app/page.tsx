@@ -281,7 +281,7 @@ export default function OverviewPage() {
           </div>
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {mockRecentActivity.map((activity) => (
-            <div key={activity.id} className="space-y-2 pb-4 border-b border-border last:border-0">
+            <div key={activity.id} className="p-3 bg-background rounded-lg space-y-2">
               <div className="font-medium">{activity.title}</div>
               <div className="text-sm text-muted-foreground">
                 {activity.time} • {activity.chain}

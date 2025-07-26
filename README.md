@@ -41,10 +41,10 @@ OptimizeDeFi is an intelligent DeFi portfolio management platform that leverages
 
 ### Frontend
 - **Framework**: Next.js 15.4.4 (App Router)
-- **UI**: Tailwind CSS + shadcn/ui components
-- **Charts**: D3.js for interactive visualizations
-- **State**: Zustand for global state management
-- **Web3**: ethers.js v6 + wagmi v2
+- **UI**: Tailwind CSS + Custom components
+- **Charts**: Custom chart components with Tailwind
+- **State**: TanStack Query for server state
+- **Web3**: wagmi v2 + viem + WalletConnect
 
 ### Backend
 - **API**: FastAPI (Python)
@@ -76,7 +76,7 @@ This project maximizes 1inch API usage:
 - Node.js 18+
 - Python 3.11+
 - Docker & Docker Compose
-- MetaMask wallet
+- Web3 wallet (MetaMask, WalletConnect compatible)
 
 ### Environment Setup
 
@@ -99,9 +99,8 @@ BACKEND_HOST=0.0.0.0
 
 # Frontend Configuration
 NEXT_PUBLIC_API_URL=http://localhost:8000
-
-# Database Configuration (if needed)
-DATABASE_URL=postgresql://user:password@localhost:5432/optimizedefi
+NEXT_PUBLIC_WS_URL=ws://localhost:8000
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id_here
 
 # JWT Configuration
 JWT_SECRET=your-secret-key-here-change-in-production
@@ -157,7 +156,11 @@ cd frontend
 npm install
 
 # Create local environment file
-echo "NEXT_PUBLIC_API_URL=http://localhost:8000" > .env.local
+cat > .env.local << EOF
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_WS_URL=ws://localhost:8000
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id_here
+EOF
 
 # Start development server with hot reload
 npm run dev
@@ -255,6 +258,16 @@ cd backend && pytest
 - Frontend: Delete `node_modules` and `.next`, then run `npm install`
 - Backend: Rebuild the container: `docker-compose build backend`
 
+**WebSocket connection failed:**
+- Ensure the backend is running: `docker-compose ps`
+- Check CORS settings allow WebSocket connections
+- Verify `NEXT_PUBLIC_WS_URL` is set correctly
+
+**WalletConnect not working:**
+- You need a valid WalletConnect Project ID
+- Sign up at https://cloud.walletconnect.com
+- Update `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` in `.env.local`
+
 ## 🚢 Deployment
 
 The application is designed for easy deployment on Railway:
@@ -276,11 +289,15 @@ The application is designed for easy deployment on Railway:
 ## 🎯 Hackathon Success Metrics
 
 - [x] Live portfolio tracking across multiple chains
-- [x] Interactive D3.js visualizations
-- [x] Working AI chat with meaningful responses
-- [x] Comprehensive 1inch API integration
-- [x] Clean, professional UI
-- [ ] Successful swap execution (testnet) - pending implementation
+- [x] Interactive custom chart visualizations
+- [x] Working AI chat with WebSocket connection
+- [x] Backend API structure for 1inch integration
+- [x] Clean, professional UI with responsive design
+- [x] Web3 wallet connection with wagmi v2
+- [x] Real-time data fetching hooks
+- [x] Error handling and loading states
+- [ ] Actual 1inch API integration - pending API key
+- [ ] Successful swap execution - pending implementation
 
 ## 🚀 Future Enhancements
 

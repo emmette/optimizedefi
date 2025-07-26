@@ -30,6 +30,39 @@ class Settings(BaseSettings):
         env="SUPPORTED_CHAINS"
     )
     
+    # OpenRouter Configuration
+    OPENROUTER_API_KEY: str = Field(default="", env="OPENROUTER_API_KEY")
+    OPENROUTER_BASE_URL: str = Field(
+        default="https://openrouter.ai/api/v1",
+        env="OPENROUTER_BASE_URL"
+    )
+    DEFAULT_MODEL: str = Field(default="google/gemini-2.0-flash", env="DEFAULT_MODEL")
+    PORTFOLIO_AGENT_MODEL: str = Field(
+        default="google/gemini-2.0-flash",
+        env="PORTFOLIO_AGENT_MODEL"
+    )
+    REBALANCING_AGENT_MODEL: str = Field(
+        default="openai/gpt-4o",
+        env="REBALANCING_AGENT_MODEL"
+    )
+    SWAP_AGENT_MODEL: str = Field(
+        default="google/gemini-2.0-flash",
+        env="SWAP_AGENT_MODEL"
+    )
+    GENERAL_AGENT_MODEL: str = Field(
+        default="google/gemini-2.0-flash",
+        env="GENERAL_AGENT_MODEL"
+    )
+    
+    # Metrics Configuration
+    ENABLE_METRICS: bool = Field(default=True, env="ENABLE_METRICS")
+    
+    # Admin Configuration
+    ADMIN_WALLET_ADDRESSES: List[str] = Field(
+        default=[],
+        env="ADMIN_WALLET_ADDRESSES"
+    )
+    
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",

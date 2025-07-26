@@ -1,9 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { Card } from '@/components/ui/Card'
 import { PortfolioChart } from '@/components/charts/PortfolioChart'
 import { PerformanceChart } from '@/components/charts/PerformanceChart'
-import { TrendingUp, TrendingDown, DollarSign, Percent, Activity, Shield } from 'lucide-react'
+import { TrendingUp, TrendingDown, DollarSign, Percent, Activity, Shield, ChevronRight } from 'lucide-react'
 
 // Mock data for development
 const mockPortfolioData = {
@@ -91,9 +92,10 @@ const mockRecentActivity = [
 
 export default function OverviewPage() {
   const isPositiveChange = mockPortfolioData.change24h > 0
+  const [isActivityCollapsed, setIsActivityCollapsed] = useState(false)
 
   return (
-    <div className="flex gap-6 h-full">
+    <div className="flex h-full">
       {/* Main Content */}
       <div className="flex-1 p-6 space-y-6 overflow-y-auto">
       {/* Header */}
@@ -201,12 +203,21 @@ export default function OverviewPage() {
       </div>
 
       {/* Recent Activity Panel */}
-      <div className="w-80 bg-card border-l border-border flex flex-col h-full">
-        <div className="p-6 border-b border-border flex justify-between items-center">
-          <h3 className="text-lg font-semibold">Recent Activity</h3>
-          <button className="text-sm text-primary hover:underline">View All</button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+      <div className={`relative bg-card border-l border-border flex flex-col h-full transition-all duration-300 ${isActivityCollapsed ? 'w-0' : 'w-80'}`}>
+        {/* Collapse Toggle Button */}
+        <button
+          onClick={() => setIsActivityCollapsed(!isActivityCollapsed)}
+          className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-12 bg-card border border-border rounded-l-md flex items-center justify-center hover:bg-accent transition-colors z-10"
+        >
+          <ChevronRight className={`h-4 w-4 transition-transform ${isActivityCollapsed ? '' : 'rotate-180'}`} />
+        </button>
+        
+        <div className={`${isActivityCollapsed ? 'hidden' : ''}`}>
+          <div className="p-6 border-b border-border flex justify-between items-center">
+            <h3 className="text-lg font-semibold">Recent Activity</h3>
+            <button className="text-sm text-primary hover:underline">View All</button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {mockRecentActivity.map((activity) => (
             <div key={activity.id} className="space-y-2 pb-4 border-b border-border last:border-0">
               <div className="font-medium">{activity.title}</div>
@@ -232,6 +243,7 @@ export default function OverviewPage() {
               </div>
             </div>
           ))}
+          </div>
         </div>
       </div>
     </div>

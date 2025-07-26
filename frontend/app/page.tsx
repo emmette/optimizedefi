@@ -207,9 +207,9 @@ export default function OverviewPage() {
         {/* Collapse Toggle Button */}
         <button
           onClick={() => setIsActivityCollapsed(!isActivityCollapsed)}
-          className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-12 bg-card border border-border rounded-l-md flex items-center justify-center hover:bg-accent transition-colors z-10"
+          className="absolute -left-4 top-6 p-1 hover:bg-accent rounded-md transition-colors z-10"
         >
-          <ChevronRight className={`h-4 w-4 transition-transform ${isActivityCollapsed ? '' : 'rotate-180'}`} />
+          <ChevronRight className={`h-5 w-5 transition-transform ${isActivityCollapsed ? '' : 'rotate-180'}`} />
         </button>
         
         <div className={`${isActivityCollapsed ? 'hidden' : ''}`}>

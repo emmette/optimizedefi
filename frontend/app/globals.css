@@ -78,3 +78,16 @@
   -webkit-text-fill-color: transparent;
   white-space: nowrap;
 }
+
+/* Animation utilities */
+.animate-delay-100 {
+  animation-delay: 100ms;
+}
+
+.animate-delay-200 {
+  animation-delay: 200ms;
+}
+
+.animate-delay-300 {
+  animation-delay: 300ms;
+}

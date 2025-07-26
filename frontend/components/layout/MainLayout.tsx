@@ -15,8 +15,10 @@ import {
   MessageSquare,
   ChevronLeft,
   Menu,
-  X
+  X,
+  BarChart3
 } from 'lucide-react'
+import { AdminOnly } from '@/hooks/useAdminAuth'
 
 interface MainLayoutProps {
   children: ReactNode
@@ -90,6 +92,22 @@ export function MainLayout({ children }: MainLayoutProps) {
                 </Link>
               )
             })}
+            
+            {/* Admin Navigation */}
+            <AdminOnly>
+              <Link
+                href="/admin"
+                className={cn(
+                  'flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors',
+                  pathname === '/admin'
+                    ? 'bg-accent text-accent-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                )}
+              >
+                <BarChart3 className="h-4 w-4" />
+                Admin
+              </Link>
+            </AdminOnly>
             </nav>
           </div>
 
@@ -138,6 +156,23 @@ export function MainLayout({ children }: MainLayoutProps) {
                   </Link>
                 )
               })}
+              
+              {/* Admin Link in Mobile */}
+              <AdminOnly>
+                <Link
+                  href="/admin"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                    pathname === '/admin'
+                      ? 'bg-accent text-accent-foreground'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                  )}
+                >
+                  <BarChart3 className="h-5 w-5" />
+                  Admin
+                </Link>
+              </AdminOnly>
             </nav>
           </div>
         </div>

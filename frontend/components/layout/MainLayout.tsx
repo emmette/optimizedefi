@@ -4,6 +4,7 @@ import { ReactNode, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { ConnectButton } from '@/components/wallet/ConnectButton'
 import { 
   LayoutDashboard, 
   TrendingUp, 
@@ -136,13 +137,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 px-4 py-2 bg-background/50 border border-border rounded-lg">
-              <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm">0x1234...5678</span>
-            </div>
-            <button className="px-5 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium">
-              Disconnect
-            </button>
+            <ConnectButton />
           </div>
         </header>
 

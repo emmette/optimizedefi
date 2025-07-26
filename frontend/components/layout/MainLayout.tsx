@@ -45,7 +45,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           isChatCollapsed && '-ml-[350px]'
         )}
       >
-        <div className="p-5 border-b border-border flex justify-between items-center">
+        <div className="px-5 py-6 border-b border-border flex justify-between items-center">
           <div>
             <h2 className="text-lg font-semibold">AI Assistant</h2>
             <p className="text-sm text-muted-foreground">Portfolio optimization help</p>
@@ -58,7 +58,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto px-5 py-4">
           <div className="space-y-4">
             <div className="bg-accent/50 p-3 rounded-lg">
               <p className="text-sm">Welcome! I can help you analyze your portfolio, suggest optimizations, and execute trades.</p>
@@ -66,7 +66,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           </div>
         </div>
 
-        <div className="p-4 border-t border-border">
+        <div className="px-5 py-4 border-t border-border">
           <div className="mb-4">
             <p className="text-sm font-medium text-muted-foreground mb-3">Suggested Actions</p>
             <div className="flex flex-wrap gap-2">

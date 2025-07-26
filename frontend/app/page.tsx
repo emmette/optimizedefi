@@ -97,7 +97,7 @@ export default function OverviewPage() {
   return (
     <div className="flex h-full">
       {/* Main Content */}
-      <div className="flex-1 p-6 space-y-6 overflow-y-auto">
+      <div className="flex-1 px-8 py-6 space-y-6 overflow-y-auto">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Portfolio Overview</h1>

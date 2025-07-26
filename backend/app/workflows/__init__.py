@@ -4,12 +4,12 @@ from app.workflows.chat_workflow import (
     ChatState,
     WorkflowConfig,
     ChatWorkflow,
-    chat_workflow
+    get_chat_workflow
 )
 
 __all__ = [
     "ChatState",
     "WorkflowConfig", 
     "ChatWorkflow",
-    "chat_workflow",
+    "get_chat_workflow",
 ]

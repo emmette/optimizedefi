@@ -445,5 +445,37 @@ class ChatWorkflow:
             yield event
 
 
-# Global workflow instance
-chat_workflow = ChatWorkflow()
+# Removed global workflow instance to prevent startup crashes
+# Workflows should be created lazily when needed
+
+# Thread-safe workflow instance cache
+_workflow_instance = None
+_workflow_error = None
+
+def get_chat_workflow():
+    """
+    Get or create a ChatWorkflow instance with proper error handling.
+    
+    Returns:
+        ChatWorkflow instance or None if initialization fails
+    """
+    global _workflow_instance, _workflow_error
+    
+    # Return cached instance if available
+    if _workflow_instance is not None:
+        return _workflow_instance
+    
+    # Return None if we've already tried and failed
+    if _workflow_error is not None:
+        return None
+    
+    try:
+        # Try to create workflow instance
+        _workflow_instance = ChatWorkflow()
+        return _workflow_instance
+    except Exception as e:
+        # Cache the error to avoid repeated attempts
+        _workflow_error = str(e)
+        import logging
+        logging.error(f"Failed to initialize ChatWorkflow: {e}")
+        return None

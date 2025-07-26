@@ -9,7 +9,7 @@ from datetime import datetime
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
 from app.core.auth import get_current_user_ws, TokenData
-from app.workflows import chat_workflow, ChatState
+from app.workflows import get_chat_workflow, ChatState
 from app.services.performance_logger import performance_logger
 from app.services.metrics import metrics_collector
 from app.services.memory_manager import memory_manager
@@ -133,6 +133,18 @@ async def websocket_endpoint(
                             "user_address": user.address if user else None,
                             "request_metadata": message_data.get("metadata", {})
                         }
+                        
+                        # Get workflow instance
+                        chat_workflow = get_chat_workflow()
+                        if chat_workflow is None:
+                            # Workflow initialization failed - send error
+                            error_msg = ChatMessage(
+                                type="error",
+                                content="Chat service is temporarily unavailable. Please ensure API keys are configured.",
+                                metadata={"error_type": "service_unavailable"}
+                            )
+                            await websocket.send_json(error_msg.to_dict())
+                            continue
                         
                         # Check if streaming is requested
                         stream_response = message_data.get("stream", True)
@@ -284,6 +296,14 @@ async def send_chat_message(
             "user_address": current_user.address,
             "rest_api": True
         }
+        
+        # Get workflow instance
+        chat_workflow = get_chat_workflow()
+        if chat_workflow is None:
+            raise HTTPException(
+                status_code=503,
+                detail="Chat service is temporarily unavailable. Please ensure API keys are configured."
+            )
         
         # Invoke workflow (non-streaming for REST)
         final_state = await chat_workflow.invoke(

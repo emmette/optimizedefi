@@ -239,24 +239,6 @@ export default function OverviewPage() {
         </Card>
       </div>
 
-      {/* Quick Actions */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="p-4 border border-border rounded-lg hover:bg-accent transition-colors text-left">
-            <h4 className="font-medium">Optimize Portfolio</h4>
-            <p className="text-sm text-muted-foreground mt-1">AI-powered rebalancing suggestions</p>
-          </button>
-          <button className="p-4 border border-border rounded-lg hover:bg-accent transition-colors text-left">
-            <h4 className="font-medium">Swap Tokens</h4>
-            <p className="text-sm text-muted-foreground mt-1">Best rates across DEXs</p>
-          </button>
-          <button className="p-4 border border-border rounded-lg hover:bg-accent transition-colors text-left">
-            <h4 className="font-medium">View Analytics</h4>
-            <p className="text-sm text-muted-foreground mt-1">Deep dive into performance</p>
-          </button>
-        </div>
-      </Card>
       </div>
 
       {/* Recent Activity Panel */}

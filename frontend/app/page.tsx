@@ -271,7 +271,7 @@ export default function OverviewPage() {
           onClick={() => setIsActivityCollapsed(!isActivityCollapsed)}
           className="absolute -left-4 top-6 p-1 hover:bg-accent rounded-md transition-colors z-10"
         >
-          <ChevronRight className={`h-5 w-5 transition-transform ${isActivityCollapsed ? '' : 'rotate-180'}`} />
+          <ChevronRight className={`h-5 w-5 transition-transform ${isActivityCollapsed ? 'rotate-180' : ''}`} />
         </button>
         
         <div className={`${isActivityCollapsed ? 'hidden' : ''}`}>

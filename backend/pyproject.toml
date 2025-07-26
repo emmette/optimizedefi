@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "optimizedefi-backend"
 version = "0.1.0"
 description = "AI-Powered DeFi Portfolio Manager Backend API"
-readme = "README.md"
+# readme = "README.md"  # Uncomment when README.md is added
 requires-python = ">=3.11"
 license = {text = "MIT"}
 authors = [

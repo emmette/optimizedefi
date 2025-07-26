@@ -114,6 +114,28 @@ export default function OverviewPage() {
   
   const isPositiveChange = portfolioData.change24h > 0
 
+  if (!isConnected) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold mb-2">Connect Your Wallet</h2>
+          <p className="text-muted-foreground">Please connect your wallet to view your portfolio</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading portfolio data...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-full">
       {/* Main Content */}
@@ -126,11 +148,11 @@ export default function OverviewPage() {
             <div>
               <p className="text-sm text-muted-foreground">Total Value</p>
               <p className="text-2xl font-bold mt-1">
-                ${mockPortfolioData.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ${portfolioData.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
               <div className={`flex items-center gap-1 mt-2 text-sm ${isPositiveChange ? 'text-green-500' : 'text-red-500'}`}>
                 {isPositiveChange ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-                <span>{Math.abs(mockPortfolioData.change24h)}%</span>
+                <span>{Math.abs(portfolioData.change24h)}%</span>
                 <span className="text-muted-foreground">24h</span>
               </div>
             </div>
@@ -145,7 +167,7 @@ export default function OverviewPage() {
             <div>
               <p className="text-sm text-muted-foreground">24h Change</p>
               <p className={`text-2xl font-bold mt-1 ${isPositiveChange ? 'text-green-500' : 'text-red-500'}`}>
-                {isPositiveChange ? '+' : '-'}${Math.abs(mockPortfolioData.changeValue24h).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {isPositiveChange ? '+' : '-'}${Math.abs(portfolioData.changeValue24h).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
               <p className="text-sm text-muted-foreground mt-2">
                 {isPositiveChange ? 'Profit' : 'Loss'} today
@@ -161,7 +183,7 @@ export default function OverviewPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Risk Level</p>
-              <p className="text-2xl font-bold mt-1">{mockPortfolioData.risk}</p>
+              <p className="text-2xl font-bold mt-1">{portfolioData.risk}</p>
               <p className="text-sm text-muted-foreground mt-2">Portfolio risk</p>
             </div>
             <div className="p-3 bg-orange-500/10 rounded-lg">
@@ -174,7 +196,7 @@ export default function OverviewPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Diversification</p>
-              <p className="text-2xl font-bold mt-1">{mockPortfolioData.diversification}</p>
+              <p className="text-2xl font-bold mt-1">{portfolioData.diversification}</p>
               <p className="text-sm text-muted-foreground mt-2">4 chains active</p>
             </div>
             <div className="p-3 bg-blue-500/10 rounded-lg">

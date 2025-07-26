@@ -12,6 +12,7 @@ from app.core.auth import get_current_user_ws, TokenData
 from app.workflows import chat_workflow, ChatState
 from app.services.performance_logger import performance_logger
 from app.services.metrics import metrics_collector
+from app.services.memory_manager import memory_manager
 
 router = APIRouter()
 
@@ -83,9 +84,6 @@ async def websocket_endpoint(
         )
         await websocket.send_json(welcome_msg.to_dict())
         
-        # Message history for session
-        messages = []
-        
         while True:
             # Receive message from client
             data = await websocket.receive_text()
@@ -111,7 +109,6 @@ async def websocket_endpoint(
                         "timestamp": datetime.utcnow().isoformat()
                     }
                 )
-                messages.append(user_msg)
                 
                 # Track request
                 async with performance_logger.log_operation(
@@ -146,7 +143,7 @@ async def websocket_endpoint(
                             response_content = ""
                             
                             async for event in chat_workflow.stream(
-                                messages=messages,
+                                messages=[user_msg],  # Just current message
                                 session_id=session_id,
                                 metadata=metadata
                             ):
@@ -185,7 +182,7 @@ async def websocket_endpoint(
                         else:
                             # Non-streaming response
                             final_state = await chat_workflow.invoke(
-                                messages=messages,
+                                messages=[user_msg],  # Just current message
                                 session_id=session_id,
                                 metadata=metadata
                             )
@@ -204,9 +201,6 @@ async def websocket_endpoint(
                                         }
                                     )
                                     await websocket.send_json(response_msg.to_dict())
-                                    
-                                    # Add to message history
-                                    messages.append(last_msg)
                         
                         # Record metrics
                         metrics.metadata["response_generated"] = True
@@ -349,11 +343,38 @@ async def get_chat_history(
     if user_session != session_id:
         raise HTTPException(status_code=403, detail="Access denied to session")
     
-    # TODO: Implement history retrieval from workflow memory
+    # Get messages from memory manager
+    messages = await memory_manager.get_messages_for_context(session_id)
+    
+    # Convert to serializable format
+    history = []
+    for msg in messages[-limit:]:  # Limit results
+        if isinstance(msg, HumanMessage):
+            history.append({
+                "type": "human",
+                "content": msg.content,
+                "metadata": msg.metadata if hasattr(msg, "metadata") else {}
+            })
+        elif isinstance(msg, AIMessage):
+            history.append({
+                "type": "ai",
+                "content": msg.content,
+                "metadata": msg.metadata if hasattr(msg, "metadata") else {}
+            })
+        elif isinstance(msg, SystemMessage):
+            history.append({
+                "type": "system",
+                "content": msg.content,
+                "metadata": msg.metadata if hasattr(msg, "metadata") else {}
+            })
+    
+    # Get session metrics
+    metrics = await memory_manager.get_session_metrics(session_id)
+    
     return {
         "session_id": session_id,
-        "messages": [],
-        "message": "History retrieval not yet implemented"
+        "messages": history,
+        "metrics": metrics
     }
 
 
@@ -372,7 +393,8 @@ async def clear_session(
     if current_user.address in user_sessions:
         del user_sessions[current_user.address]
     
-    # TODO: Clear from workflow memory
+    # Clear from memory manager
+    await memory_manager.clear_session(session_id)
     
     return {
         "status": "success",

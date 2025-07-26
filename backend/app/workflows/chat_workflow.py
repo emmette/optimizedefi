@@ -20,6 +20,7 @@ from app.agents import (
 from app.tools import get_tools_for_agent
 from app.services.performance_logger import performance_logger
 from app.services.metrics import metrics_collector
+from app.services.memory_manager import memory_manager
 
 
 # State definition
@@ -318,7 +319,8 @@ class ChatWorkflow:
         self,
         messages: List[BaseMessage],
         session_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
+        context_window_size: int = 8192
     ) -> ChatState:
         """
         Invoke the workflow with messages.
@@ -327,10 +329,28 @@ class ChatWorkflow:
             messages: Input messages
             session_id: Session ID for memory
             metadata: Additional metadata
+            context_window_size: Model context window size
             
         Returns:
             Final state after workflow execution
         """
+        # If session_id provided, use memory manager
+        if session_id and self.config.enable_memory:
+            # Get or create session
+            user_address = metadata.get("user_address") if metadata else None
+            session = await memory_manager.get_or_create_session(session_id, user_address)
+            
+            # Add new messages to memory
+            for msg in messages:
+                if isinstance(msg, (HumanMessage, AIMessage)):
+                    await memory_manager.add_message(session_id, msg, context_window_size)
+            
+            # Get optimized message history
+            messages = await memory_manager.get_messages_for_context(
+                session_id,
+                max_tokens=int(context_window_size * 0.9)  # Leave room for response
+            )
+        
         # Prepare initial state
         initial_state: ChatState = {
             "messages": messages,
@@ -343,28 +363,26 @@ class ChatWorkflow:
         if session_id:
             initial_state["metadata"]["session_id"] = session_id
         
-        # Limit message history if configured
-        if self.config.max_message_history and len(messages) > self.config.max_message_history:
-            # Keep system message and recent history
-            system_msgs = [m for m in messages if isinstance(m, SystemMessage)]
-            recent_msgs = messages[-self.config.max_message_history:]
-            initial_state["messages"] = system_msgs + recent_msgs
-        
         # Run workflow
         config = {"configurable": {"thread_id": session_id}} if session_id else {}
         
-        if self.config.enable_streaming:
-            # Streaming execution (returns async generator)
-            return await self.app.ainvoke(initial_state, config)
-        else:
-            # Non-streaming execution
-            return await self.app.ainvoke(initial_state, config)
+        # Execute workflow
+        result = await self.app.ainvoke(initial_state, config)
+        
+        # Store response in memory if session exists
+        if session_id and self.config.enable_memory and result.get("messages"):
+            last_msg = result["messages"][-1]
+            if isinstance(last_msg, AIMessage):
+                await memory_manager.add_message(session_id, last_msg, context_window_size)
+        
+        return result
     
     async def stream(
         self,
         messages: List[BaseMessage],
         session_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
+        context_window_size: int = 8192
     ):
         """
         Stream the workflow execution.
@@ -373,10 +391,28 @@ class ChatWorkflow:
             messages: Input messages
             session_id: Session ID
             metadata: Additional metadata
+            context_window_size: Model context window size
             
         Yields:
             Workflow events
         """
+        # If session_id provided, use memory manager
+        if session_id and self.config.enable_memory:
+            # Get or create session
+            user_address = metadata.get("user_address") if metadata else None
+            session = await memory_manager.get_or_create_session(session_id, user_address)
+            
+            # Add new messages to memory
+            for msg in messages:
+                if isinstance(msg, (HumanMessage, AIMessage)):
+                    await memory_manager.add_message(session_id, msg, context_window_size)
+            
+            # Get optimized message history
+            messages = await memory_manager.get_messages_for_context(
+                session_id,
+                max_tokens=int(context_window_size * 0.9)
+            )
+        
         # Prepare initial state
         initial_state: ChatState = {
             "messages": messages,
@@ -392,7 +428,20 @@ class ChatWorkflow:
         # Stream workflow
         config = {"configurable": {"thread_id": session_id}} if session_id else {}
         
+        # Track if we've captured the response
+        response_captured = False
+        
         async for event in self.app.astream(initial_state, config):
+            # Capture AI response for memory
+            if session_id and self.config.enable_memory and not response_captured:
+                for node_name, node_output in event.items():
+                    if node_name.endswith("_agent") and "messages" in node_output:
+                        for msg in node_output["messages"]:
+                            if isinstance(msg, AIMessage):
+                                await memory_manager.add_message(session_id, msg, context_window_size)
+                                response_captured = True
+                                break
+            
             yield event
 
 

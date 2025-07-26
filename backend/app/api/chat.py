@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
-from app.core.auth import get_current_user_ws, TokenData
+from app.core.auth import get_current_user_ws, get_current_user, TokenData
 from app.workflows import get_chat_workflow, ChatState
 from app.services.performance_logger import performance_logger
 from app.services.metrics import metrics_collector

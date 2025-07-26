@@ -87,16 +87,11 @@ export function MainLayout({ children }: MainLayoutProps) {
               </button>
             </div>
           </div>
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Ask me anything about your portfolio..."
-              className="w-full px-4 py-2 pr-10 bg-background border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <button className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-accent rounded-md transition-colors">
-              <MessageSquare className="h-4 w-4" />
-            </button>
-          </div>
+          <input
+            type="text"
+            placeholder="Ask me anything about your portfolio..."
+            className="w-full px-4 py-2 bg-background border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
         </div>
       </div>
 

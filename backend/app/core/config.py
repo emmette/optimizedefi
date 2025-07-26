@@ -23,9 +23,6 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = Field(default="HS256", env="JWT_ALGORITHM")
     JWT_EXPIRATION_HOURS: int = Field(default=24, env="JWT_EXPIRATION_HOURS")
     
-    # Redis
-    REDIS_URL: str = Field(default="redis://localhost:6379", env="REDIS_URL")
-    
     # Chain IDs
     SUPPORTED_CHAINS: List[int] = Field(
         default=[1, 137, 10, 42161],  # Ethereum, Polygon, Optimism, Arbitrum

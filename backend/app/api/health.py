@@ -23,8 +23,7 @@ async def detailed_health_check():
         "timestamp": datetime.utcnow().isoformat(),
         "checks": {
             "api": True,
-            "1inch_api": False,
-            "redis": False
+            "1inch_api": False
         }
     }
     

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Card } from '@/components/ui/Card'
+import { Card } from '@/components/ui/card'
 import { 
   Zap, 
   Shield, 

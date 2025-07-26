@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import * as d3 from 'd3'
-import { Card } from '@/components/ui/Card'
+import { Card } from '@/components/ui/card'
 import { ChartExportButton } from './ChartExportButton'
 
 interface ChainData {

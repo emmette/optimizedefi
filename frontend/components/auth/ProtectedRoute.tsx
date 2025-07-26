@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { useAccount } from 'wagmi'
 import { useRouter } from 'next/navigation'
-import { Card } from '@/components/ui/Card'
+import { Card } from '@/components/ui/card'
 import { Shield, LogIn } from 'lucide-react'
 
 interface ProtectedRouteProps {

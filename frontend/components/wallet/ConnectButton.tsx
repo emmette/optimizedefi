@@ -2,7 +2,7 @@
 
 import { useAccount, useConnect, useDisconnect, useEnsName } from 'wagmi'
 import { useState, useEffect } from 'react'
-import { Card } from '@/components/ui/Card'
+import { Card } from '@/components/ui/card'
 import { Wallet, ChevronDown, LogOut, Copy, ExternalLink, Shield } from 'lucide-react'
 import { useSiwe } from '@/hooks/useSiwe'
 import { useAuthStore } from '@/store/authStore'

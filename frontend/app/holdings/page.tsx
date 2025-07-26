@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Card } from '@/components/ui/Card'
+import { Card } from '@/components/ui/card'
 import { Search, TrendingUp, TrendingDown } from 'lucide-react'
 // import { usePortfolio } from '@/hooks/usePortfolio'
 // import { useAccount } from 'wagmi'

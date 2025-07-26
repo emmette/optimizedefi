@@ -104,16 +104,20 @@ export function MainLayout({ children }: MainLayoutProps) {
       <div className="flex-1 flex flex-col">
         {/* Top Navigation */}
         <header className="h-16 border-b border-border flex items-center justify-between px-4 lg:px-6">
-          {/* Mobile menu button */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden p-2 hover:bg-accent rounded-md transition-colors"
-          >
-            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
+          <div className="flex items-center gap-4 lg:gap-8">
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="lg:hidden p-2 hover:bg-accent rounded-md transition-colors"
+            >
+              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-1">
+            {/* Project Title */}
+            <h1 className="app-title">OptimizeDeFi</h1>
+
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center space-x-1">
             {navigation.map((item) => {
               const Icon = item.icon
               const isActive = pathname === item.href
@@ -133,7 +137,8 @@ export function MainLayout({ children }: MainLayoutProps) {
                 </Link>
               )
             })}
-          </nav>
+            </nav>
+          </div>
 
           <div className="flex items-center gap-2 lg:gap-4">
             <button className="hidden sm:block p-2 hover:bg-accent rounded-md transition-colors">

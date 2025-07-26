@@ -191,13 +191,13 @@ export function MainLayout({ children }: MainLayoutProps) {
         </div>
       )}
 
-      {/* Floating Chat Toggle (when collapsed) - Desktop only */}
+      {/* Floating Chat Toggle (when collapsed) */}
       {isChatCollapsed && (
         <button
           onClick={() => setIsChatCollapsed(false)}
-          className="hidden lg:block fixed left-4 bottom-4 p-3 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-colors"
+          className="fixed left-4 top-1/2 -translate-y-1/2 p-2 bg-card border border-border rounded-r-md hover:bg-accent transition-colors z-20"
         >
-          <MessageSquare className="h-5 w-5" />
+          <MessageSquare className="h-4 w-4" />
         </button>
       )}
 

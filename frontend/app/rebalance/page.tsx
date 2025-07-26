@@ -3,305 +3,323 @@
 import { useState } from 'react'
 import { Card } from '@/components/ui/Card'
 import { 
-  TrendingUp, 
-  Shield, 
   Zap, 
-  AlertTriangle, 
-  Info, 
-  Play,
-  RefreshCw,
+  Shield, 
+  TrendingUp, 
+  AlertTriangle,
+  CheckCircle,
+  ChevronRight,
+  Info,
   Settings,
-  ChevronRight
+  RefreshCw,
+  DollarSign,
+  ArrowRight
 } from 'lucide-react'
 
-// Mock data for rebalancing
+// Mock portfolio allocations
 const mockCurrentAllocation = [
-  { symbol: 'ETH', percentage: 35.9, value: 45000, targetPercentage: 40 },
-  { symbol: 'USDC', percentage: 25.5, value: 32000, targetPercentage: 20 },
-  { symbol: 'MATIC', percentage: 22.7, value: 28432.56, targetPercentage: 20 },
-  { symbol: 'OP', percentage: 15.9, value: 20000, targetPercentage: 10 },
-  { symbol: 'ARB', percentage: 0, value: 0, targetPercentage: 10 },
+  { token: 'ETH', percentage: 35.9, value: 45000, target: 30 },
+  { token: 'MATIC', percentage: 25.5, value: 32000, target: 20 },
+  { token: 'OP', percentage: 22.7, value: 28432.56, target: 25 },
+  { token: 'ARB', percentage: 15.9, value: 20000, target: 15 },
+  { token: 'USDC', percentage: 3.9, value: 5000, target: 5 },
+  { token: 'USDT', percentage: 2.4, value: 3000, target: 3 },
+  { token: 'DAI', percentage: 2.0, value: 2500, target: 2 },
 ]
 
+// Mock strategies
 const mockStrategies = [
   {
     id: 'conservative',
     name: 'Conservative',
     description: 'Lower risk, stable returns',
-    icon: Shield,
+    risk: 'Low',
+    expectedAPY: 8.5,
     allocation: {
-      'Stablecoins': 40,
-      'Blue Chips': 40,
-      'Mid Cap': 15,
-      'Small Cap': 5,
+      stablecoins: 40,
+      bluechips: 50,
+      altcoins: 10,
     },
-    metrics: {
-      expectedReturn: '8-12%',
-      risk: 'Low',
-      sharpeRatio: 1.2,
-    }
   },
   {
     id: 'balanced',
     name: 'Balanced',
     description: 'Moderate risk and returns',
-    icon: TrendingUp,
+    risk: 'Medium',
+    expectedAPY: 12.5,
     allocation: {
-      'Stablecoins': 20,
-      'Blue Chips': 40,
-      'Mid Cap': 30,
-      'Small Cap': 10,
+      stablecoins: 25,
+      bluechips: 50,
+      altcoins: 25,
     },
-    metrics: {
-      expectedReturn: '15-25%',
-      risk: 'Medium',
-      sharpeRatio: 1.5,
-    }
   },
   {
     id: 'aggressive',
     name: 'Aggressive',
     description: 'Higher risk, higher returns',
-    icon: Zap,
+    risk: 'High',
+    expectedAPY: 18.5,
     allocation: {
-      'Stablecoins': 10,
-      'Blue Chips': 30,
-      'Mid Cap': 40,
-      'Small Cap': 20,
+      stablecoins: 10,
+      bluechips: 40,
+      altcoins: 50,
     },
-    metrics: {
-      expectedReturn: '25-40%',
-      risk: 'High',
-      sharpeRatio: 1.8,
-    }
+  },
+  {
+    id: 'custom',
+    name: 'Custom',
+    description: 'Create your own allocation',
+    risk: 'Variable',
+    expectedAPY: 0,
+    allocation: {
+      stablecoins: 0,
+      bluechips: 0,
+      altcoins: 0,
+    },
   },
 ]
 
-const mockRebalancingSteps = [
-  { action: 'Sell', from: 'USDC', amount: '2,000', to: 'USD', status: 'pending' },
-  { action: 'Sell', from: 'MATIC', amount: '1,500', to: 'USD', status: 'pending' },
-  { action: 'Buy', from: 'USD', amount: '2,500', to: 'ETH', status: 'pending' },
-  { action: 'Buy', from: 'USD', amount: '1,000', to: 'ARB', status: 'pending' },
+// Mock rebalance actions
+const mockRebalanceActions = [
+  { from: 'ETH', to: 'USDC', amount: 1500, reason: 'Reduce volatility' },
+  { from: 'MATIC', to: 'OP', amount: 2000, reason: 'Better growth potential' },
+  { from: 'ARB', to: 'DAI', amount: 1000, reason: 'Increase stable allocation' },
 ]
 
 export default function RebalancePage() {
-  const [selectedStrategy, setSelectedStrategy] = useState('balanced')
+  const [selectedStrategy, setSelectedStrategy] = useState(mockStrategies[1])
   const [showAdvanced, setShowAdvanced] = useState(false)
-  const [isSimulating, setIsSimulating] = useState(false)
 
-  const handleSimulate = () => {
-    setIsSimulating(true)
-    // Simulate API call
-    setTimeout(() => setIsSimulating(false), 2000)
-  }
+  const totalValue = mockCurrentAllocation.reduce((sum, item) => sum + item.value, 0)
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="px-8 py-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Rebalance Portfolio</h1>
-        <p className="text-muted-foreground mt-1">AI-powered portfolio optimization and rebalancing</p>
+        <h1 className="text-2xl font-bold">Rebalance</h1>
+        <p className="text-muted-foreground mt-1">Optimize your portfolio allocation with AI-powered strategies</p>
       </div>
 
-      {/* Current vs Target Allocation */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {/* Current Allocation */}
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4">Current Allocation</h3>
           <div className="space-y-3">
-            {mockCurrentAllocation.map((token) => (
-              <div key={token.symbol} className="flex items-center justify-between">
-                <div className="flex items-center gap-3 flex-1">
-                  <span className="font-medium w-16">{token.symbol}</span>
-                  <div className="flex-1">
-                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-primary transition-all duration-500"
-                        style={{ width: `${token.percentage}%` }}
-                      />
-                    </div>
+            {mockCurrentAllocation.map((item) => (
+              <div key={item.token}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-medium">{item.token}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">
+                      {item.percentage.toFixed(1)}%
+                    </span>
+                    {Math.abs(item.percentage - item.target) > 2 && (
+                      <AlertTriangle className="h-3 w-3 text-yellow-500" />
+                    )}
                   </div>
                 </div>
-                <span className="text-sm font-medium w-16 text-right">{token.percentage}%</span>
+                <div className="w-full bg-background rounded-full h-2">
+                  <div
+                    className="bg-primary h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${item.percentage}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-xs text-muted-foreground">
+                    ${item.value.toLocaleString()}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Target: {item.target}%
+                  </span>
+                </div>
               </div>
             ))}
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-border">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Total Value</span>
+              <span className="font-semibold">
+                ${totalValue.toLocaleString()}
+              </span>
+            </div>
           </div>
         </Card>
 
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Target Allocation</h3>
-          <div className="space-y-3">
-            {mockCurrentAllocation.map((token) => (
-              <div key={token.symbol} className="flex items-center justify-between">
-                <div className="flex items-center gap-3 flex-1">
-                  <span className="font-medium w-16">{token.symbol}</span>
-                  <div className="flex-1">
-                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-green-500 transition-all duration-500"
-                        style={{ width: `${token.targetPercentage}%` }}
-                      />
-                    </div>
+        {/* Strategy Selection */}
+        <Card className="p-6 lg:col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Rebalancing Strategy</h3>
+            <button
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Settings className="h-4 w-4" />
+              Advanced
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            {mockStrategies.map((strategy) => (
+              <button
+                key={strategy.id}
+                onClick={() => setSelectedStrategy(strategy)}
+                className={`p-4 rounded-lg border transition-all text-left ${
+                  selectedStrategy.id === strategy.id
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border hover:border-primary/50'
+                }`}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <h4 className="font-medium">{strategy.name}</h4>
+                    <p className="text-sm text-muted-foreground">{strategy.description}</p>
                   </div>
+                  {selectedStrategy.id === strategy.id && (
+                    <CheckCircle className="h-5 w-5 text-primary" />
+                  )}
                 </div>
-                <span className="text-sm font-medium w-16 text-right">{token.targetPercentage}%</span>
-              </div>
+                <div className="flex items-center gap-4 mt-3">
+                  <div className="flex items-center gap-1">
+                    <Shield className={`h-4 w-4 ${
+                      strategy.risk === 'Low' ? 'text-green-500' :
+                      strategy.risk === 'Medium' ? 'text-yellow-500' :
+                      strategy.risk === 'High' ? 'text-red-500' : 'text-muted-foreground'
+                    }`} />
+                    <span className="text-sm">{strategy.risk}</span>
+                  </div>
+                  {strategy.expectedAPY > 0 && (
+                    <div className="flex items-center gap-1">
+                      <TrendingUp className="h-4 w-4 text-green-500" />
+                      <span className="text-sm">{strategy.expectedAPY}% APY</span>
+                    </div>
+                  )}
+                </div>
+              </button>
             ))}
           </div>
+
+          {/* Strategy Details */}
+          {selectedStrategy.id !== 'custom' && (
+            <Card className="p-4 bg-background">
+              <h4 className="font-medium mb-3">Allocation Breakdown</h4>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Stablecoins</span>
+                  <span className="text-sm font-medium">{selectedStrategy.allocation.stablecoins}%</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Blue Chips (ETH, BTC)</span>
+                  <span className="text-sm font-medium">{selectedStrategy.allocation.bluechips}%</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Altcoins</span>
+                  <span className="text-sm font-medium">{selectedStrategy.allocation.altcoins}%</span>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Advanced Settings */}
+          {showAdvanced && (
+            <Card className="mt-4 p-4 bg-background">
+              <h4 className="font-medium mb-3">Advanced Settings</h4>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-sm text-muted-foreground">Max Slippage</label>
+                  <input
+                    type="text"
+                    defaultValue="1.0"
+                    className="w-full mt-1 px-3 py-2 bg-background border border-input rounded-md text-sm"
+                    placeholder="1.0%"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-muted-foreground">Rebalance Threshold</label>
+                  <input
+                    type="text"
+                    defaultValue="5.0"
+                    className="w-full mt-1 px-3 py-2 bg-background border border-input rounded-md text-sm"
+                    placeholder="5.0%"
+                  />
+                </div>
+              </div>
+            </Card>
+          )}
         </Card>
       </div>
 
-      {/* Strategy Selection */}
+      {/* Rebalance Actions */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Select Strategy</h3>
-          <button
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Settings className="h-4 w-4" />
-            Advanced Settings
-          </button>
+          <h3 className="text-lg font-semibold">Rebalance Actions</h3>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <RefreshCw className="h-4 w-4" />
+            <span>3 transactions required</span>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {mockStrategies.map((strategy) => {
-            const Icon = strategy.icon
-            return (
-              <button
-                key={strategy.id}
-                onClick={() => setSelectedStrategy(strategy.id)}
-                className={`p-4 border-2 rounded-lg transition-all text-left ${
-                  selectedStrategy === strategy.id
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:border-muted-foreground'
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-lg ${
-                    selectedStrategy === strategy.id ? 'bg-primary/10' : 'bg-secondary'
-                  }`}>
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-medium">{strategy.name}</h4>
-                    <p className="text-sm text-muted-foreground mt-1">{strategy.description}</p>
-                    <div className="mt-3 space-y-1">
-                      <p className="text-xs">
-                        <span className="text-muted-foreground">Expected Return:</span>{' '}
-                        <span className="font-medium">{strategy.metrics.expectedReturn}</span>
-                      </p>
-                      <p className="text-xs">
-                        <span className="text-muted-foreground">Risk Level:</span>{' '}
-                        <span className="font-medium">{strategy.metrics.risk}</span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </button>
-            )
-          })}
-        </div>
-
-        {showAdvanced && (
-          <Card className="mt-4 p-4 bg-secondary/50 space-y-4">
-            <div>
-              <label className="text-sm font-medium">Rebalancing Threshold</label>
-              <input
-                type="range"
-                min="1"
-                max="10"
-                defaultValue="5"
-                className="w-full mt-2"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                <span>1%</span>
-                <span>5%</span>
-                <span>10%</span>
-              </div>
-            </div>
-            <div>
-              <label className="text-sm font-medium">Max Slippage</label>
-              <select className="w-full mt-2 px-3 py-2 bg-background border border-input rounded-md">
-                <option>0.5%</option>
-                <option>1%</option>
-                <option>2%</option>
-              </select>
-            </div>
-          </Card>
-        )}
-      </Card>
-
-      {/* Rebalancing Preview */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Rebalancing Preview</h3>
-        <div className="space-y-3">
-          {mockRebalancingSteps.map((step, index) => (
-            <div key={index} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
+        <div className="space-y-3 mb-6">
+          {mockRebalanceActions.map((action, index) => (
+            <div key={index} className="flex items-center justify-between p-3 bg-background rounded-lg">
               <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${
-                  step.action === 'Buy' ? 'bg-green-500/10' : 'bg-red-500/10'
-                }`}>
-                  {step.action === 'Buy' ? (
-                    <TrendingUp className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <TrendingUp className="h-4 w-4 text-red-500 rotate-180" />
-                  )}
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <ArrowRight className="h-4 w-4 text-primary" />
                 </div>
                 <div>
                   <p className="font-medium">
-                    {step.action} {step.amount} {step.action === 'Buy' ? step.to : step.from}
+                    Swap {action.from} → {action.to}
                   </p>
-                  <p className="text-sm text-muted-foreground">
-                    {step.action === 'Buy' ? `With ${step.from}` : `For ${step.to}`}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{action.reason}</p>
                 </div>
               </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              <div className="text-right">
+                <p className="font-medium">${action.amount.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">~{(action.amount / totalValue * 100).toFixed(1)}%</p>
+              </div>
             </div>
           ))}
         </div>
 
-        <Card className="mt-4 p-4 bg-orange-500/10 border-orange-500/20">
-          <div className="flex gap-3">
-            <AlertTriangle className="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
-            <div className="space-y-1 text-sm">
-              <p className="font-medium">Estimated Costs</p>
-              <p className="text-muted-foreground">
-                Network fees: ~$45.67 • Price impact: 0.23% • Total trades: 4
-              </p>
+        {/* Cost Summary */}
+        <Card className="p-4 bg-background mb-6">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Estimated Gas Fees</span>
+              <span className="font-medium">~$45.67</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Price Impact</span>
+              <span className="font-medium text-green-500">{'<0.1%'}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Time to Complete</span>
+              <span className="font-medium">~2 minutes</span>
             </div>
           </div>
         </Card>
-      </Card>
 
-      {/* Action Buttons */}
-      <div className="flex gap-4">
-        <button
-          onClick={handleSimulate}
-          disabled={isSimulating}
-          className="flex-1 flex items-center justify-center gap-2 py-4 bg-secondary hover:bg-secondary/80 rounded-lg font-medium transition-colors disabled:opacity-50"
-        >
-          {isSimulating ? (
-            <RefreshCw className="h-5 w-5 animate-spin" />
-          ) : (
-            <Play className="h-5 w-5" />
-          )}
-          {isSimulating ? 'Simulating...' : 'Simulate Rebalance'}
-        </button>
-        <button className="flex-1 py-4 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg font-medium transition-colors">
-          Execute Rebalance
-        </button>
-      </div>
+        {/* Action Buttons */}
+        <div className="flex gap-3">
+          <button className="flex-1 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2">
+            <Zap className="h-5 w-5" />
+            Execute Rebalance
+          </button>
+          <button className="px-6 py-3 bg-secondary hover:bg-secondary/80 rounded-lg font-medium transition-colors">
+            Preview
+          </button>
+        </div>
+      </Card>
 
       {/* Info Card */}
       <Card className="p-4 bg-blue-500/10 border-blue-500/20">
         <div className="flex gap-3">
           <Info className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
-          <div className="space-y-1 text-sm">
-            <p className="font-medium">AI-Powered Optimization</p>
-            <p className="text-muted-foreground">
-              Our AI analyzes market conditions, gas prices, and slippage to find the most efficient rebalancing path. 
-              All trades are executed through 1inch for best rates.
+          <div className="space-y-1">
+            <p className="text-sm font-medium">AI-Powered Optimization</p>
+            <p className="text-sm text-muted-foreground">
+              Our AI analyzes market conditions, gas prices, and liquidity to find the most efficient rebalancing path with minimal slippage.
             </p>
           </div>
         </div>

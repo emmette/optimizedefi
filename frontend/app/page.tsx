@@ -139,11 +139,11 @@ export default function OverviewPage() {
   return (
     <div className="flex h-full">
       {/* Main Content */}
-      <div className="flex-1 px-8 py-6 space-y-6 overflow-y-auto">
+      <div className="flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6 overflow-y-auto">
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <Card className="p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total Value</p>
@@ -162,7 +162,7 @@ export default function OverviewPage() {
           </div>
         </Card>
 
-        <Card className="p-6">
+        <Card className="p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">24h Change</p>
@@ -179,7 +179,7 @@ export default function OverviewPage() {
           </div>
         </Card>
 
-        <Card className="p-6">
+        <Card className="p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Risk Level</p>
@@ -192,7 +192,7 @@ export default function OverviewPage() {
           </div>
         </Card>
 
-        <Card className="p-6">
+        <Card className="p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Diversification</p>
@@ -213,7 +213,7 @@ export default function OverviewPage() {
           <PerformanceChart data={mockPortfolioData.performance} />
         </Card>
 
-        <Card className="p-6 lg:col-span-2">
+        <Card className="p-4 sm:p-6 lg:col-span-2">
           <h3 className="text-lg font-semibold mb-4">Top Opportunities</h3>
           <div className="space-y-4">
             <div className="p-4 bg-background rounded-lg border border-border">
@@ -251,13 +251,13 @@ export default function OverviewPage() {
       </div>
 
       {/* Second Row: Asset Allocation and Chain Distribution */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <Card className="p-6 lg:col-span-3">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
+        <Card className="p-4 sm:p-6 lg:col-span-3">
           <h3 className="text-lg font-semibold mb-4">Asset Allocation</h3>
           <PortfolioChart data={mockPortfolioData.chains} />
         </Card>
 
-        <Card className="p-6 lg:col-span-2">
+        <Card className="p-4 sm:p-6 lg:col-span-2">
           <h3 className="text-lg font-semibold mb-4">Chain Distribution</h3>
           <div className="space-y-3">
             {mockPortfolioData.chains.map((chain) => (
@@ -283,8 +283,8 @@ export default function OverviewPage() {
 
       </div>
 
-      {/* Recent Activity Panel */}
-      <div className={`relative bg-card border-l border-border flex flex-col h-full transition-all duration-300 ${isActivityCollapsed ? 'w-0' : 'w-80'}`}>
+      {/* Recent Activity Panel - Hidden on mobile */}
+      <div className={`hidden lg:flex relative bg-card border-l border-border flex-col h-full transition-all duration-300 ${isActivityCollapsed ? 'w-0' : 'w-80'}`}>
         {/* Collapse Toggle Button */}
         <button
           onClick={() => setIsActivityCollapsed(!isActivityCollapsed)}

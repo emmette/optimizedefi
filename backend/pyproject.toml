@@ -88,6 +88,9 @@ warn_unused_configs = true
 disallow_untyped_defs = true
 ignore_missing_imports = true
 
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]

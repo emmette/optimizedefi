@@ -1,30 +1,18 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Bot, User } from 'lucide-react'
-
-interface Message {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  timestamp: Date
-}
+import { Send, Bot, User, WifiOff, Wifi } from 'lucide-react'
+import { useChat } from '@/hooks/useChat'
+import { useAccount } from 'wagmi'
 
 interface ChatPanelProps {
   onSuggestedAction?: (action: string) => void
 }
 
 export function ChatPanel({ onSuggestedAction }: ChatPanelProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: 'Welcome! I can help you analyze your portfolio, suggest optimizations, and execute trades. How can I assist you today?',
-      timestamp: new Date(),
-    },
-  ])
+  const { isConnected: isWalletConnected } = useAccount()
+  const { messages, isConnected, isTyping, sendMessage } = useChat()
   const [input, setInput] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -36,52 +24,10 @@ export function ChatPanel({ onSuggestedAction }: ChatPanelProps) {
   }, [messages])
 
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return
+    if (!input.trim() || !isConnected || isTyping) return
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: input,
-      timestamp: new Date(),
-    }
-
-    setMessages((prev) => [...prev, userMessage])
     setInput('')
-    setIsLoading(true)
-
-    // Simulate AI response
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: getAIResponse(input),
-        timestamp: new Date(),
-      }
-      setMessages((prev) => [...prev, assistantMessage])
-      setIsLoading(false)
-    }, 1000)
-  }
-
-  const getAIResponse = (query: string): string => {
-    const lowerQuery = query.toLowerCase()
-    
-    if (lowerQuery.includes('portfolio') && lowerQuery.includes('performance')) {
-      return 'Your portfolio has shown strong performance over the past month with a 12.5% return. ETH has been your best performer (+15.2%), while MATIC has underperformed (-3.1%). Would you like me to suggest some rebalancing strategies?'
-    }
-    
-    if (lowerQuery.includes('rebalance')) {
-      return 'Based on your current allocation, I recommend reducing ETH exposure from 35.9% to 30% and increasing your stablecoin allocation for better risk management. This would involve swapping approximately $5,000 worth of ETH. Shall I prepare this rebalancing plan for you?'
-    }
-    
-    if (lowerQuery.includes('yield') || lowerQuery.includes('apy')) {
-      return 'I found several high-yield opportunities:\n\n1. Aave V3 on Ethereum: 18.5% APY on ETH deposits\n2. Compound on Polygon: 12.3% APY on USDC\n3. Yearn on Optimism: 9.8% APY on DAI\n\nWould you like me to help you allocate funds to these protocols?'
-    }
-    
-    if (lowerQuery.includes('gas') || lowerQuery.includes('fee')) {
-      return 'Current gas prices:\n• Ethereum: 45 gwei (~$12 for swap)\n• Polygon: 30 gwei (~$0.01)\n• Optimism: 0.001 gwei (~$0.05)\n• Arbitrum: 0.1 gwei (~$0.10)\n\nI recommend using Polygon or Arbitrum for smaller transactions to save on fees.'
-    }
-    
-    return 'I understand you\'re asking about "' + query + '". Let me analyze your portfolio data to provide you with the best recommendations. What specific aspect would you like me to focus on?'
+    sendMessage(input)
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -104,12 +50,28 @@ export function ChatPanel({ onSuggestedAction }: ChatPanelProps) {
       <div className="px-5 py-6 border-b border-border flex justify-between items-center">
         <div>
           <h2 className="text-lg font-semibold">AI Assistant</h2>
-          <p className="text-sm text-muted-foreground">Portfolio optimization help</p>
+          <p className="text-sm text-muted-foreground">
+            {isWalletConnected 
+              ? (isConnected 
+                  ? 'Portfolio optimization help' 
+                  : 'Connecting to chat service...')
+              : 'Connect wallet to start'}
+          </p>
         </div>
+        {isWalletConnected && (
+          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 py-4">
         <div className="space-y-4">
+          {messages.length === 0 && isWalletConnected && (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">
+                {isConnected ? 'Start a conversation about your portfolio!' : 'Connecting to AI assistant...'}
+              </p>
+            </div>
+          )}
           {messages.map((message) => (
             <div
               key={message.id}
@@ -131,7 +93,7 @@ export function ChatPanel({ onSuggestedAction }: ChatPanelProps) {
               >
                 <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                 <p className="text-xs opacity-70 mt-1">
-                  {message.timestamp.toLocaleTimeString([], {
+                  {new Date(message.timestamp).toLocaleTimeString([], {
                     hour: '2-digit',
                     minute: '2-digit',
                   })}
@@ -144,7 +106,7 @@ export function ChatPanel({ onSuggestedAction }: ChatPanelProps) {
               )}
             </div>
           ))}
-          {isLoading && (
+          {isTyping && (
             <div className="flex gap-3">
               <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
                 <Bot className="h-5 w-5 text-primary" />
@@ -190,11 +152,11 @@ export function ChatPanel({ onSuggestedAction }: ChatPanelProps) {
             onKeyPress={handleKeyPress}
             placeholder="Ask me anything about your portfolio..."
             className="flex-1 px-4 py-2 bg-background border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            disabled={isLoading}
+            disabled={!isConnected || isTyping || !isWalletConnected}
           />
           <button
             onClick={handleSend}
-            disabled={!input.trim() || isLoading}
+            disabled={!input.trim() || !isConnected || isTyping || !isWalletConnected}
             className="p-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Send className="h-5 w-5" />

@@ -5,6 +5,8 @@ import { Card } from '@/components/ui/Card'
 import { PortfolioChart } from '@/components/charts/PortfolioChart'
 import { PerformanceChart } from '@/components/charts/PerformanceChart'
 import { TrendingUp, TrendingDown, DollarSign, Percent, Activity, Shield, ChevronRight } from 'lucide-react'
+import { usePortfolio } from '@/hooks/usePortfolio'
+import { useAccount } from 'wagmi'
 
 // Mock data for development
 const mockPortfolioData = {
@@ -91,8 +93,26 @@ const mockRecentActivity = [
 ]
 
 export default function OverviewPage() {
-  const isPositiveChange = mockPortfolioData.change24h > 0
   const [isActivityCollapsed, setIsActivityCollapsed] = useState(false)
+  const { isConnected } = useAccount()
+  const { data: portfolio, isLoading } = usePortfolio()
+  
+  // Use portfolio data if available, otherwise fall back to mock data
+  const portfolioData = portfolio ? {
+    totalValue: portfolio.total_value_usd,
+    change24h: 2.34, // TODO: Calculate from historical data
+    changeValue24h: 2876.43, // TODO: Calculate from historical data
+    risk: 'Medium',
+    diversification: 'Good',
+    chains: portfolio.chains.map(chainId => ({
+      name: chainId === 1 ? 'Ethereum' : chainId === 137 ? 'Polygon' : chainId === 10 ? 'Optimism' : 'Arbitrum',
+      value: portfolio.tokens.filter(t => t.chain_id === chainId).reduce((acc, t) => acc + t.balance_usd, 0),
+      percentage: (portfolio.tokens.filter(t => t.chain_id === chainId).reduce((acc, t) => acc + t.balance_usd, 0) / portfolio.total_value_usd) * 100
+    })),
+    performance: mockPortfolioData.performance // TODO: Fetch from history endpoint
+  } : mockPortfolioData
+  
+  const isPositiveChange = portfolioData.change24h > 0
 
   return (
     <div className="flex h-full">

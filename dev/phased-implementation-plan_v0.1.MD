@@ -40,6 +40,15 @@ This document outlines the phased implementation plan for the OptimizeDeFi hacka
 - [ ] Configure environment variables
 - [ ] Test deployment pipeline with hello-world
 
+### 1.6 HTML Mocks to Functional Components
+- [ ] Implement Overview page component with portfolio summary cards
+- [ ] Implement Holdings page with token list and chain breakdown
+- [ ] Implement Analytics page with D3.js charts
+- [ ] Implement Swap page with token selector and swap interface
+- [ ] Implement Rebalance page with portfolio optimization UI
+- [ ] Add responsive design for all components
+- [ ] Integrate mock data for development
+
 ---
 
 ## Phase 2: Core Frontend & Web3 Integration (Day 1 - Saturday)

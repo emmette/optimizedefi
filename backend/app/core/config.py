@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     ONEINCH_BASE_URL: str = Field(default="https://api.1inch.io/v6.0", env="ONEINCH_BASE_URL")
     
     # Authentication
+    SECRET_KEY: str = Field(default="your-secret-key-here-change-in-production", env="SECRET_KEY")
     JWT_SECRET: str = Field(default="your-secret-key-here", env="JWT_SECRET")
     JWT_ALGORITHM: str = Field(default="HS256", env="JWT_ALGORITHM")
     JWT_EXPIRATION_HOURS: int = Field(default=24, env="JWT_EXPIRATION_HOURS")

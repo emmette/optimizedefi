@@ -5,6 +5,7 @@ import uvicorn
 
 from app.api import health, portfolio, auth, chat
 from app.core.config import settings
+from app.core.middleware import AuthMiddleware, RateLimitMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -29,6 +30,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add rate limiting middleware
+app.add_middleware(RateLimitMiddleware, requests_per_hour=1000)
+
+# Add authentication middleware (after rate limiting)
+app.add_middleware(AuthMiddleware)
 
 # Include routers
 app.include_router(health.router, tags=["health"])

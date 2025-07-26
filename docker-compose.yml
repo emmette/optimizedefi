@@ -28,8 +28,6 @@ services:
       - JWT_ALGORITHM=${JWT_ALGORITHM}
       - JWT_EXPIRATION_HOURS=${JWT_EXPIRATION_HOURS}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      # Workaround for langchain-openai validation
-      - OPENAI_API_KEY=${OPENROUTER_API_KEY}
     volumes:
       - ./backend:/app
     env_file:

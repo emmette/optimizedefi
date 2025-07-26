@@ -2,9 +2,5 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dependencies
-COPY package*.json ./
-RUN npm ci
-
-# Start development server
-CMD ["npm", "run", "dev"]
+# We'll let the command handle everything since volumes override the filesystem
+CMD ["sh", "-c", "if [ ! -d node_modules ]; then npm ci; fi && npm run dev"]

@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { Card } from '@/components/ui/Card'
-import { PortfolioChart } from '@/components/charts/PortfolioChart'
-import { PerformanceChart } from '@/components/charts/PerformanceChart'
+import { D3PortfolioDonutChart } from '@/components/charts/D3PortfolioDonutChart'
+import { D3PerformanceChart } from '@/components/charts/D3PerformanceChart'
+import { D3ChainDistributionChart } from '@/components/charts/D3ChainDistributionChart'
 import { TrendingUp, TrendingDown, DollarSign, Percent, Activity, Shield, ChevronRight } from 'lucide-react'
 import { usePortfolio } from '@/hooks/usePortfolio'
 import { useAccount } from 'wagmi'
@@ -220,10 +221,12 @@ export default function OverviewPage() {
 
       {/* First Row: Portfolio Performance and Top Opportunities */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <Card className="p-6 lg:col-span-3">
-          <h3 className="text-lg font-semibold mb-4">Portfolio Performance</h3>
-          <PerformanceChart data={mockPortfolioData.performance} />
-        </Card>
+        <div className="lg:col-span-3">
+          <D3PerformanceChart data={mockPortfolioData.performance.map(d => ({ 
+            date: new Date(d.date), 
+            value: d.value 
+          }))} />
+        </div>
 
         <Card className="p-4 sm:p-6 lg:col-span-2">
           <h3 className="text-lg font-semibold mb-4">Top Opportunities</h3>
@@ -264,33 +267,23 @@ export default function OverviewPage() {
 
       {/* Second Row: Asset Allocation and Chain Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
-        <Card className="p-4 sm:p-6 lg:col-span-3">
-          <h3 className="text-lg font-semibold mb-4">Asset Allocation</h3>
-          <PortfolioChart data={mockPortfolioData.chains} />
-        </Card>
+        <div className="lg:col-span-3">
+          <D3PortfolioDonutChart 
+            tokens={portfolio?.tokens || []} 
+            totalValue={portfolioData.totalValue} 
+          />
+        </div>
 
-        <Card className="p-4 sm:p-6 lg:col-span-2">
-          <h3 className="text-lg font-semibold mb-4">Chain Distribution</h3>
-          <div className="space-y-3">
-            {mockPortfolioData.chains.map((chain) => (
-              <div key={chain.name} className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>{chain.name}</span>
-                  <span className="font-medium">{chain.percentage.toFixed(1)}%</span>
-                </div>
-                <div className="w-full bg-background rounded-full h-2">
-                  <div 
-                    className="bg-primary h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${chain.percentage}%` }}
-                  />
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  ${chain.value.toLocaleString()}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
+        <div className="lg:col-span-2">
+          <D3ChainDistributionChart 
+            data={portfolioData.chains.map((chain, idx) => ({
+              chainId: [1, 137, 10, 42161][idx] || 1,
+              name: chain.name,
+              value: chain.value,
+              percentage: chain.percentage
+            }))} 
+          />
+        </div>
       </div>
 
       </div>

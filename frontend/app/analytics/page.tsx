@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Card } from '@/components/ui/Card'
-import { PerformanceChart } from '@/components/charts/PerformanceChart'
+import { D3PerformanceChart } from '@/components/charts/D3PerformanceChart'
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -157,7 +157,10 @@ export default function AnalyticsPage() {
           </div>
         </div>
         <div className="h-64">
-          <PerformanceChart data={performanceData} />
+          <D3PerformanceChart data={performanceData.map(d => ({ 
+            date: new Date(d.date), 
+            value: d.value 
+          }))} height={250} />
         </div>
       </Card>
 

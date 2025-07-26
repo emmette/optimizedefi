@@ -70,11 +70,11 @@
 
 /* Custom styles for project branding */
 .app-title {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
-  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  background: linear-gradient(to right, #3b82f6, #8b5cf6);
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   background-clip: text;
-  letter-spacing: -0.025em;
+  -webkit-text-fill-color: transparent;
+  white-space: nowrap;
 }

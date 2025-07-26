@@ -114,7 +114,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             </button>
 
             {/* Project Title */}
-            <h1 className="app-title">OptimizeDeFi</h1>
+            <h1 className="app-title">Optimize DeFi</h1>
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center space-x-1">

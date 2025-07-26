@@ -1,18 +1,41 @@
 'use client'
 
 import { useAccount, useConnect, useDisconnect, useEnsName } from 'wagmi'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/Card'
-import { Wallet, ChevronDown, LogOut, Copy, ExternalLink } from 'lucide-react'
+import { Wallet, ChevronDown, LogOut, Copy, ExternalLink, Shield } from 'lucide-react'
+import { useSiwe } from '@/hooks/useSiwe'
+import { useAuthStore } from '@/store/authStore'
 
 export function ConnectButton() {
   const { address, isConnected, chain } = useAccount()
   const { connect, connectors, isPending } = useConnect()
   const { disconnect } = useDisconnect()
   const { data: ensName } = useEnsName({ address })
-  // const { data: ensAvatar } = useEnsAvatar({ name: ensName ?? undefined })
   const [showConnectors, setShowConnectors] = useState(false)
   const [showAccountMenu, setShowAccountMenu] = useState(false)
+  
+  // SIWE authentication
+  const { signIn, signOut, isAuthenticated, isLoading: isAuthLoading } = useSiwe()
+  const checkSession = useAuthStore(state => state.checkSession)
+  
+  // Check session on mount
+  useEffect(() => {
+    if (isConnected) {
+      checkSession()
+    }
+  }, [isConnected, checkSession])
+  
+  // Auto-prompt for SIWE after wallet connection
+  useEffect(() => {
+    if (isConnected && !isAuthenticated && !isAuthLoading) {
+      // Small delay to ensure wallet is fully connected
+      const timer = setTimeout(() => {
+        signIn()
+      }, 500)
+      return () => clearTimeout(timer)
+    }
+  }, [isConnected, isAuthenticated, isAuthLoading, signIn])
 
   const formatAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`
@@ -32,7 +55,10 @@ export function ConnectButton() {
           onClick={() => setShowAccountMenu(!showAccountMenu)}
           className="flex items-center gap-3 px-4 py-2 bg-background/50 border border-border rounded-lg hover:bg-accent transition-colors"
         >
-          <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+            {isAuthenticated && <Shield className="h-4 w-4 text-green-500" />}
+          </div>
           <span className="text-sm font-medium">
             {ensName || formatAddress(address)}
           </span>
@@ -72,8 +98,25 @@ export function ConnectButton() {
                 </div>
               </div>
 
+              {!isAuthenticated && (
+                <button
+                  onClick={async () => {
+                    await signIn()
+                    setShowAccountMenu(false)
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors mb-2"
+                  disabled={isAuthLoading}
+                >
+                  <Shield className="h-4 w-4" />
+                  {isAuthLoading ? 'Signing...' : 'Sign In'}
+                </button>
+              )}
+
               <button
-                onClick={() => {
+                onClick={async () => {
+                  if (isAuthenticated) {
+                    await signOut()
+                  }
                   disconnect()
                   setShowAccountMenu(false)
                 }}

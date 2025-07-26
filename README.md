@@ -86,48 +86,111 @@ git clone https://github.com/yourusername/optimizedefi.git
 cd optimizedefi
 ```
 
-2. Create environment files:
+2. Create environment file:
 
-Frontend (`.env.local`):
+Create `.env` in the root directory:
 ```env
+# 1inch API Configuration
+ONEINCH_API_KEY=your_1inch_api_key_here
+
+# Backend Configuration
+BACKEND_PORT=8000
+BACKEND_HOST=0.0.0.0
+
+# Frontend Configuration
 NEXT_PUBLIC_API_URL=http://localhost:8000
-NEXT_PUBLIC_WS_URL=ws://localhost:8000
+
+# Database Configuration (if needed)
+DATABASE_URL=postgresql://user:password@localhost:5432/optimizedefi
+
+# JWT Configuration
+JWT_SECRET=your-secret-key-here-change-in-production
+JWT_ALGORITHM=HS256
+JWT_EXPIRATION_HOURS=24
+
+# Network Configuration
+NEXT_PUBLIC_SUPPORTED_CHAINS=1,137,10,42161
+
+# Environment
+NODE_ENV=development
 ```
 
-Backend (`.env`):
-```env
-OPENAI_API_KEY=your_openai_key
-ANTHROPIC_API_KEY=your_anthropic_key
-ONEINCH_API_KEY=your_1inch_api_key
-JWT_SECRET=your_jwt_secret
-CORS_ORIGINS=http://localhost:3000
-```
+### 🐳 Docker Setup (Production-like)
 
-3. Start the application:
+Start the entire application stack with Docker:
+
 ```bash
-docker-compose up
+# Build and start all services
+docker-compose up --build -d
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
 ```
 
-4. Access the application:
+Access the application:
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8000
+- API Documentation: http://localhost:8000/docs
 
-### Development Setup
+### 💻 Development Setup (Recommended)
 
-For local development without Docker:
+For the best development experience with hot reload:
 
-**Frontend:**
+**Step 1: Start the backend in Docker**
 ```bash
+# Start only the backend service
+docker-compose up -d backend
+
+# Check backend health
+curl http://localhost:8000/health
+```
+
+**Step 2: Run the frontend locally**
+```bash
+# Navigate to frontend directory
 cd frontend
+
+# Install dependencies (first time only)
 npm install
+
+# Create local environment file
+echo "NEXT_PUBLIC_API_URL=http://localhost:8000" > .env.local
+
+# Start development server with hot reload
 npm run dev
 ```
 
-**Backend:**
+The frontend will be available at http://localhost:3000 with full hot reload support.
+
+### 🔄 Development Workflow
+
+1. **Backend changes**: The Docker backend automatically reloads when you modify Python files
+2. **Frontend changes**: The local Next.js dev server provides instant hot reload
+3. **Database changes**: Backend container has persistent volumes for data
+
+### 🛠️ Useful Commands
+
 ```bash
-cd backend
-pip install -r requirements.txt
-uvicorn app.main:app --reload
+# Rebuild containers after dependency changes
+docker-compose build
+
+# View container status
+docker-compose ps
+
+# Access backend container shell
+docker exec -it optimizedefi-backend-1 /bin/bash
+
+# Reset everything (careful - removes volumes)
+docker-compose down -v
+
+# Run frontend build locally
+cd frontend && npm run build
+
+# Run backend tests
+docker exec optimizedefi-backend-1 pytest
 ```
 
 ## 📁 Project Structure
@@ -169,6 +232,28 @@ cd frontend && npm test
 # Backend tests
 cd backend && pytest
 ```
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**Frontend not updating after changes in Docker:**
+- The production Docker setup doesn't support hot reload
+- Use the development setup (local frontend + Docker backend) for active development
+- Or rebuild the frontend container: `docker-compose build frontend && docker-compose up -d`
+
+**Port already in use:**
+- Check if another process is using port 3000 or 8000
+- Stop other Docker containers: `docker ps` and `docker stop <container_id>`
+- Or change the ports in docker-compose.yml
+
+**Backend can't connect to frontend:**
+- Ensure CORS is configured correctly in backend settings
+- Check that `ALLOWED_ORIGINS` includes `http://localhost:3000`
+
+**Module not found errors:**
+- Frontend: Delete `node_modules` and `.next`, then run `npm install`
+- Backend: Rebuild the container: `docker-compose build backend`
 
 ## 🚢 Deployment
 

@@ -17,6 +17,11 @@ This document contains features and enhancements that are valuable but not requi
   - User-specific vs global cache strategies
   - TTL based on query type
 - **Predictive Prefetching**: Anticipate user queries and prefetch data
+- **Token-by-Token Streaming**: Implement streaming LLM responses for better UX
+  - Stream tokens as they're generated from OpenRouter
+  - Update UI progressively as response builds
+  - Handle partial markdown rendering
+  - Implement proper error handling for interrupted streams
 
 ### Rate Limit Management
 - **Model Fallback on Rate Limits**: Automatically switch to alternative models when primary model hits rate limits

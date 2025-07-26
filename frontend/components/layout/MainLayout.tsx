@@ -70,14 +70,20 @@ export function MainLayout({ children }: MainLayoutProps) {
           <div className="mb-4">
             <p className="text-sm font-medium text-muted-foreground mb-3">Suggested Actions</p>
             <div className="flex flex-wrap gap-2">
-              <button className="px-3 py-1.5 text-xs bg-primary/10 hover:bg-primary/20 rounded-md transition-colors">
-                Analyze portfolio
+              <button className="px-3 py-1.5 text-xs bg-secondary hover:bg-primary hover:text-primary-foreground border border-border rounded-md transition-all">
+                🔄 Quick Swap
               </button>
-              <button className="px-3 py-1.5 text-xs bg-primary/10 hover:bg-primary/20 rounded-md transition-colors">
-                Find opportunities
+              <button className="px-3 py-1.5 text-xs bg-secondary hover:bg-primary hover:text-primary-foreground border border-border rounded-md transition-all">
+                ⚡ AI Rebalance
               </button>
-              <button className="px-3 py-1.5 text-xs bg-primary/10 hover:bg-primary/20 rounded-md transition-colors">
-                Risk assessment
+              <button className="px-3 py-1.5 text-xs bg-secondary hover:bg-primary hover:text-primary-foreground border border-border rounded-md transition-all">
+                📊 Analyze Portfolio
+              </button>
+              <button className="px-3 py-1.5 text-xs bg-secondary hover:bg-primary hover:text-primary-foreground border border-border rounded-md transition-all">
+                💰 Find Yield
+              </button>
+              <button className="px-3 py-1.5 text-xs bg-secondary hover:bg-primary hover:text-primary-foreground border border-border rounded-md transition-all">
+                ⛽ Optimize Gas
               </button>
             </div>
           </div>

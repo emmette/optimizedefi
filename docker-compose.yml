@@ -8,10 +8,8 @@ services:
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_API_URL=http://localhost:8000
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
+    # Volumes removed to allow standalone Next.js build to work properly
+    # For development, use npm run dev locally instead
     depends_on:
       - backend
     networks:

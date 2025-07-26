@@ -140,20 +140,14 @@ export function MainLayout({ children }: MainLayoutProps) {
             </nav>
           </div>
 
-          <div className="flex items-center gap-2 lg:gap-4">
-            <button className="hidden sm:block p-2 hover:bg-accent rounded-md transition-colors">
-              <Bell className="h-5 w-5" />
-            </button>
-            <button className="hidden sm:block p-2 hover:bg-accent rounded-md transition-colors">
-              <HelpCircle className="h-5 w-5" />
-            </button>
-            <button className="p-2 hover:bg-accent rounded-md transition-colors">
-              <Settings className="h-5 w-5" />
-            </button>
-            <div className="flex items-center gap-2 px-2 sm:px-3 py-1.5 bg-accent rounded-md">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 px-4 py-2 bg-background/50 border border-border rounded-lg">
               <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-              <span className="text-xs sm:text-sm font-medium">0x742d...3456</span>
+              <span className="text-sm">0x1234...5678</span>
             </div>
+            <button className="px-5 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium">
+              Disconnect
+            </button>
           </div>
         </header>
 

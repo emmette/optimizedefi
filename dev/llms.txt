@@ -1,0 +1,37 @@
+# 1inch API Documentation - llms.txt
+
+## Authentication
+- [Authentication](https://portal.1inch.dev/documentation/apis/authentication): Learn how to authenticate API requests using API keys.
+
+## Core APIs
+- [Overview](https://portal.1inch.dev/documentation/overview): Comprehensive guides for integrating with 1inch APIs and protocols.
+- [Swap APIs](https://portal.1inch.dev/documentation/apis/swap/introduction): Execute token swaps.
+- [Orderbook API](https://portal.1inch.dev/documentation/apis/orderbook/introduction): Access the 1inch orderbook.
+- [History API](https://portal.1inch.dev/documentation/apis/history/introduction): Access transaction history data across major blockchain networks.
+- [Traces API](https://portal.1inch.dev/documentation/apis/traces/introduction): Get transaction traces.
+- [Portfolio API](https://portal.1inch.dev/documentation/apis/portfolio/introduction): Track your DeFi portfolio.
+- [Balance API](https://portal.1inch.dev/documentation/apis/balance/introduction): Real-time token balance tracking across multiple blockchain networks.
+- [Gas Price API](https://portal.1inch.dev/documentation/apis/gas-price/introduction): Get real-time gas prices.
+- [Spot Price API](https://portal.1inch.dev/documentation/apis/spot-price/introduction): Get real-time spot prices for tokens.
+- [Token API](https://portal.1inch.dev/documentation/apis/tokens/introduction): Get information about tokens.
+- [NFT API](https://portal.1inch.dev/documentation/apis/nft/introduction): Get information about NFTs.
+- [Transaction Gateway API](https://portal.1inch.dev/documentation/apis/transaction/introduction): Secure on-chain transaction broadcasting.
+- [Web3 RPC API](https://portal.1inch.dev/documentation/apis/web3-rpc/introduction): Access the 1inch Web3 RPC.
+- [Charts API](https://portal.1inch.dev/documentation/apis/charts/introduction): Get data for charts.
+- [Domains API](https://portal.1inch.dev/documentation/apis/domains/introduction): Resolve domain names.
+- [Token Details API](https://portal.1inch.dev/documentation/apis/token-details/introduction): Get detailed information about tokens.
+
+## Contracts
+- [Aggregation Protocol](https://portal.1inch.dev/documentation/contracts/aggregation-protocol/aggregation-introduction): Interact with the 1inch Aggregation Protocol.
+- [Limit Order Protocol](https://portal.1inch.dev/documentation/contracts/limit-order-protocol/limit-order-introduction): Interact with the 1inch Limit Order Protocol.
+- [Spot Price Aggregator](https://portal.1inch.dev/documentation/contracts/spot-price-aggregator/spot-price-aggregator-introduction): Interact with the 1inch Spot Price Aggregator.
+
+## SDKs
+# No SDKs found in the documentation.
+
+## Examples
+# No examples found in the documentation.
+
+## Rate Limiting & Error Handling
+- [FAQ](https://portal.1inch.dev/documentation/faq/general): Find answers to common integration questions for 1inch API.
+- [Becoming a Resolver](https://portal.1inch.dev/documentation/becoming-a-resolver): Information on becoming a resolver.

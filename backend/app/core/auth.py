@@ -11,12 +11,17 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
 from web3 import Web3
+from fastapi import WebSocket, Query, HTTPException, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from app.core.config import settings
 
 
 # Password context for future use (if needed for admin accounts)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# Security scheme
+security = HTTPBearer()
 
 # JWT settings
 ALGORITHM = "HS256"
@@ -279,3 +284,53 @@ class RateLimiter:
 
 # Global rate limiter instance
 rate_limiter = RateLimiter(max_requests=100, window_seconds=3600)
+
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> TokenData:
+    """
+    Dependency to get current authenticated user from JWT token.
+    
+    Args:
+        credentials: HTTP Bearer token credentials
+        
+    Returns:
+        TokenData if authenticated, raises HTTPException otherwise
+    """
+    token = credentials.credentials
+    token_data = verify_token(token)
+    
+    if token_data is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    return token_data
+
+
+async def get_current_user_ws(
+    websocket: WebSocket,
+    token: Optional[str] = Query(None)
+) -> Optional[TokenData]:
+    """
+    Get current user from WebSocket connection.
+    
+    Args:
+        websocket: WebSocket connection
+        token: JWT token from query parameter
+        
+    Returns:
+        TokenData if authenticated, None otherwise
+    """
+    if not token:
+        # Try to get token from WebSocket headers
+        auth_header = websocket.headers.get("authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
+    
+    if not token:
+        return None
+    
+    # Verify token
+    return verify_token(token)

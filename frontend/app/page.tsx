@@ -7,6 +7,7 @@ import { PerformanceChart } from '@/components/charts/PerformanceChart'
 import { TrendingUp, TrendingDown, DollarSign, Percent, Activity, Shield, ChevronRight } from 'lucide-react'
 import { usePortfolio } from '@/hooks/usePortfolio'
 import { useAccount } from 'wagmi'
+import { CardSkeleton, ChartSkeleton } from '@/components/ui/LoadingSkeleton'
 
 // Mock data for development
 const mockPortfolioData = {
@@ -127,10 +128,21 @@ export default function OverviewPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading portfolio data...</p>
+      <div className="flex h-full">
+        <div className="flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6 overflow-y-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {[...Array(4)].map((_, i) => (
+              <CardSkeleton key={i} />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
+            <div className="lg:col-span-3">
+              <ChartSkeleton />
+            </div>
+            <div className="lg:col-span-2">
+              <ChartSkeleton />
+            </div>
+          </div>
         </div>
       </div>
     )

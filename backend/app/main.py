@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import uvicorn
 
-from app.api import health, portfolio, auth, chat
+from app.api import health, portfolio, auth, chat, mcp
 from app.core.config import settings
 from app.core.middleware import AuthMiddleware, RateLimitMiddleware
 
@@ -42,6 +42,7 @@ app.include_router(health.router, tags=["health"])
 app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
 app.include_router(portfolio.router, prefix="/api/portfolio", tags=["portfolio"])
 app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
+app.include_router(mcp.router, prefix="/api/mcp", tags=["mcp"])
 
 @app.get("/")
 async def root():

@@ -98,11 +98,6 @@ export default function OverviewPage() {
     <div className="flex h-full">
       {/* Main Content */}
       <div className="flex-1 px-8 py-6 space-y-6 overflow-y-auto">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Portfolio Overview</h1>
-        <p className="text-muted-foreground mt-1">Track your DeFi portfolio performance across multiple chains</p>
-      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

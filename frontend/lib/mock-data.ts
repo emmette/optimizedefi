@@ -106,7 +106,7 @@ const baseTokens: Omit<Token, 'id' | 'balance' | 'value'>[] = [
 
 // Generate mock portfolio data
 export function getMockPortfolioData(): PortfolioData {
-  const tokens: Token[] = baseTokens.map((token, index) => {
+  const tokens: Token[] = baseTokens.map((token) => {
     const balance = Math.random() * 10000
     const value = balance * token.price
     return {

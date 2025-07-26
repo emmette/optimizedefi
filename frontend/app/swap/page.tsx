@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { Card } from '@/components/ui/Card'
 import { ArrowDownUp, Settings, Info, ChevronDown, Search } from 'lucide-react'
 
@@ -58,7 +59,7 @@ export default function SwapPage() {
         onClick={() => setShowList(!showList)}
         className="flex items-center gap-2 px-3 py-2 bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
       >
-        <img src={token.logo} alt={token.symbol} className="w-6 h-6 rounded-full" />
+        <Image src={token.logo} alt={token.symbol} width={24} height={24} className="rounded-full" />
         <span className="font-medium">{token.symbol}</span>
         <ChevronDown className="h-4 w-4" />
       </button>
@@ -86,7 +87,7 @@ export default function SwapPage() {
                 className="w-full flex items-center justify-between p-3 hover:bg-accent transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <img src={t.logo} alt={t.symbol} className="w-8 h-8 rounded-full" />
+                  <Image src={t.logo} alt={t.symbol} width={32} height={32} className="rounded-full" />
                   <div className="text-left">
                     <p className="font-medium">{t.symbol}</p>
                     <p className="text-sm text-muted-foreground">{t.name}</p>

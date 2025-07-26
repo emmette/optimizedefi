@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Card } from '@/components/ui/Card'
-import { TrendingUp, DollarSign, PieChart, BarChart3, Calendar, Download } from 'lucide-react'
+import { TrendingUp, DollarSign, PieChart, BarChart3, Download } from 'lucide-react'
 
 // Mock data for analytics
 const mockAnalyticsData = {

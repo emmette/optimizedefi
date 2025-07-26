@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { Card } from '@/components/ui/Card'
-import { Search, Filter, ChevronDown, ExternalLink, Copy } from 'lucide-react'
+import { Search, ChevronDown, ExternalLink, Copy } from 'lucide-react'
 
 // Mock data for token holdings
 const mockHoldings = [
@@ -155,7 +156,7 @@ export default function HoldingsPage() {
         <div className="relative">
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
+            onChange={(e) => setSortBy(e.target.value as 'value' | 'change' | 'name')}
             className="appearance-none px-4 py-2 pr-10 bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
           >
             <option value="value">Sort by Value</option>
@@ -203,13 +204,12 @@ export default function HoldingsPage() {
                 <tr key={token.id} className="border-b border-border hover:bg-accent/50 transition-colors">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
-                      <img
+                      <Image
                         src={token.logo}
                         alt={token.symbol}
-                        className="w-8 h-8 rounded-full"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/placeholder-token.png'
-                        }}
+                        width={32}
+                        height={32}
+                        className="rounded-full"
                       />
                       <div>
                         <p className="font-medium">{token.symbol}</p>

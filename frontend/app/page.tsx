@@ -169,16 +169,78 @@ export default function OverviewPage() {
         </Card>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Portfolio Distribution</h3>
+      {/* First Row: Portfolio Performance and Top Opportunities */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <Card className="p-6 lg:col-span-3">
+          <h3 className="text-lg font-semibold mb-4">Portfolio Performance</h3>
+          <PerformanceChart data={mockPortfolioData.performance} />
+        </Card>
+
+        <Card className="p-6 lg:col-span-2">
+          <h3 className="text-lg font-semibold mb-4">Top Opportunities</h3>
+          <div className="space-y-4">
+            <div className="p-4 bg-background rounded-lg border border-border">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h4 className="font-medium">Rebalance to Conservative</h4>
+                  <p className="text-sm text-muted-foreground">Lower risk, stable returns</p>
+                </div>
+                <span className="text-green-500 text-sm font-medium">+12% APY</span>
+              </div>
+              <button className="text-sm text-primary hover:underline">View Details →</button>
+            </div>
+            <div className="p-4 bg-background rounded-lg border border-border">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h4 className="font-medium">Yield Farming on Polygon</h4>
+                  <p className="text-sm text-muted-foreground">High yield opportunity</p>
+                </div>
+                <span className="text-green-500 text-sm font-medium">+25% APY</span>
+              </div>
+              <button className="text-sm text-primary hover:underline">View Details →</button>
+            </div>
+            <div className="p-4 bg-background rounded-lg border border-border">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h4 className="font-medium">Optimize Gas Costs</h4>
+                  <p className="text-sm text-muted-foreground">Save on transaction fees</p>
+                </div>
+                <span className="text-green-500 text-sm font-medium">Save $234</span>
+              </div>
+              <button className="text-sm text-primary hover:underline">View Details →</button>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Second Row: Asset Allocation and Chain Distribution */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <Card className="p-6 lg:col-span-3">
+          <h3 className="text-lg font-semibold mb-4">Asset Allocation</h3>
           <PortfolioChart data={mockPortfolioData.chains} />
         </Card>
 
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Performance (30 Days)</h3>
-          <PerformanceChart data={mockPortfolioData.performance} />
+        <Card className="p-6 lg:col-span-2">
+          <h3 className="text-lg font-semibold mb-4">Chain Distribution</h3>
+          <div className="space-y-3">
+            {mockPortfolioData.chains.map((chain) => (
+              <div key={chain.name} className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>{chain.name}</span>
+                  <span className="font-medium">{chain.percentage.toFixed(1)}%</span>
+                </div>
+                <div className="w-full bg-background rounded-full h-2">
+                  <div 
+                    className="bg-primary h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${chain.percentage}%` }}
+                  />
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  ${chain.value.toLocaleString()}
+                </div>
+              </div>
+            ))}
+          </div>
         </Card>
       </div>
 

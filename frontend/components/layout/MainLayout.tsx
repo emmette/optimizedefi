@@ -14,7 +14,9 @@ import {
   ChevronLeft,
   Settings,
   HelpCircle,
-  Bell
+  Bell,
+  Menu,
+  X
 } from 'lucide-react'
 
 interface MainLayoutProps {
@@ -32,13 +34,14 @@ const navigation = [
 export function MainLayout({ children }: MainLayoutProps) {
   const pathname = usePathname()
   const [isChatCollapsed, setIsChatCollapsed] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   return (
     <div className="flex h-screen bg-background">
-      {/* AI Chat Panel */}
+      {/* AI Chat Panel - Hidden on mobile, shown on desktop */}
       <div
         className={cn(
-          'w-[350px] bg-card border-r border-border flex flex-col transition-all duration-300',
+          'hidden lg:flex w-[350px] bg-card border-r border-border flex-col transition-all duration-300',
           isChatCollapsed && '-ml-[350px]'
         )}
       >
@@ -94,8 +97,17 @@ export function MainLayout({ children }: MainLayoutProps) {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col">
         {/* Top Navigation */}
-        <header className="h-16 border-b border-border flex items-center justify-between px-6">
-          <nav className="flex items-center space-x-1">
+        <header className="h-16 border-b border-border flex items-center justify-between px-4 lg:px-6">
+          {/* Mobile menu button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="lg:hidden p-2 hover:bg-accent rounded-md transition-colors"
+          >
+            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center space-x-1">
             {navigation.map((item) => {
               const Icon = item.icon
               const isActive = pathname === item.href
@@ -117,19 +129,19 @@ export function MainLayout({ children }: MainLayoutProps) {
             })}
           </nav>
 
-          <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-accent rounded-md transition-colors">
+          <div className="flex items-center gap-2 lg:gap-4">
+            <button className="hidden sm:block p-2 hover:bg-accent rounded-md transition-colors">
               <Bell className="h-5 w-5" />
             </button>
-            <button className="p-2 hover:bg-accent rounded-md transition-colors">
+            <button className="hidden sm:block p-2 hover:bg-accent rounded-md transition-colors">
               <HelpCircle className="h-5 w-5" />
             </button>
             <button className="p-2 hover:bg-accent rounded-md transition-colors">
               <Settings className="h-5 w-5" />
             </button>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-accent rounded-md">
+            <div className="flex items-center gap-2 px-2 sm:px-3 py-1.5 bg-accent rounded-md">
               <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm font-medium">0x742d...3456</span>
+              <span className="text-xs sm:text-sm font-medium">0x742d...3456</span>
             </div>
           </div>
         </header>
@@ -140,15 +152,61 @@ export function MainLayout({ children }: MainLayoutProps) {
         </main>
       </div>
 
-      {/* Floating Chat Toggle (when collapsed) */}
+      {/* Mobile Navigation Menu */}
+      {isMobileMenuOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
+          <div className="fixed inset-y-0 left-0 w-64 bg-card border-r border-border p-4">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-semibold">Menu</h2>
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-2 hover:bg-accent rounded-md transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <nav className="space-y-2">
+              {navigation.map((item) => {
+                const Icon = item.icon
+                const isActive = pathname === item.href
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                      isActive
+                        ? 'bg-accent text-accent-foreground'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                    )}
+                  >
+                    <Icon className="h-5 w-5" />
+                    {item.name}
+                  </Link>
+                )
+              })}
+            </nav>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Chat Toggle (when collapsed) - Desktop only */}
       {isChatCollapsed && (
         <button
           onClick={() => setIsChatCollapsed(false)}
-          className="fixed left-4 bottom-4 p-3 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-colors"
+          className="hidden lg:block fixed left-4 bottom-4 p-3 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-colors"
         >
           <MessageSquare className="h-5 w-5" />
         </button>
       )}
+
+      {/* Mobile Chat Button */}
+      <button
+        className="lg:hidden fixed right-4 bottom-4 p-3 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-colors"
+      >
+        <MessageSquare className="h-5 w-5" />
+      </button>
     </div>
   )
 }

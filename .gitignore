@@ -205,3 +205,128 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Next.js / Frontend
+.next/
+out/
+node_modules/
+.pnp
+.pnp.js
+.yarn/
+yarn-error.log*
+yarn-debug.log*
+npm-debug.log*
+lerna-debug.log*
+.npm
+*.tsbuildinfo
+next-env.d.ts
+
+# Testing
+coverage/
+.nyc_output
+
+# Production builds
+*.production
+
+# Environment files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+.docker/
+
+# Blockchain / Smart Contracts
+contracts/artifacts/
+contracts/cache/
+contracts/typechain/
+contracts/typechain-types/
+contracts/deployments/
+typechain/
+typechain-types/
+
+# Hardhat files
+cache/
+artifacts/
+
+# Foundry files
+forge-cache/
+out/
+
+# OpenZeppelin
+.openzeppelin/
+
+# Node files
+logs/
+*.log
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/
+
+# Private keys and mnemonics
+*.key
+*.pem
+*.p12
+*.pfx
+mnemonic.txt
+.secret
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# FastAPI specific
+.pytest_cache/
+htmlcov/
+
+# SSL certificates
+*.crt
+*.csr
+
+# Webpack
+.webpack/
+
+# Parcel
+.parcel-cache/
+
+# Gatsby
+public/
+.gatsby-context.js
+.cache/
+
+# Railway
+railway.json
+
+# Misc
+*.bak
+*.swp
+*.swo
+.history/

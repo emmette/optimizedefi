@@ -14,6 +14,7 @@ from app.core.auth import (
     rate_limiter,
     TokenData
 )
+from app.core.admin import admin_access_control, get_admin_status
 from app.core.config import settings
 
 
@@ -230,3 +231,16 @@ async def refresh_token(
         access_token=access_token,
         address=current_user.address
     )
+
+
+@router.get("/admin/status")
+async def get_admin_status_endpoint(
+    admin_status: dict = Depends(get_admin_status)
+):
+    """
+    Check if current user has admin privileges.
+    
+    Returns:
+        Admin status information
+    """
+    return admin_status

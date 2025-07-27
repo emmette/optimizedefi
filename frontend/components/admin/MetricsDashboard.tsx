@@ -172,14 +172,6 @@ export function MetricsDashboard() {
     },
   };
 
-  const doughnutOptions: ChartOptions<'doughnut'> = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'right' as const,
-      },
-    },
-  };
 
   return (
     <div className="space-y-6">

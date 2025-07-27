@@ -22,6 +22,7 @@ export class OneInchAPIClient {
   private rateLimitState: Map<string, RateLimitState> = new Map()
   private readonly MAX_REQUESTS_PER_MINUTE = 30
   private readonly RATE_LIMIT_WINDOW = 60000 // 1 minute in ms
+  private initError: Error | null = null
 
   constructor(apiKey?: string) {
     // In production, this would come from environment variables
@@ -30,10 +31,16 @@ export class OneInchAPIClient {
     
     // Check if API key is configured
     if (!this.apiKey) {
-      throw new OneInchAPIError(
+      this.initError = new OneInchAPIError(
         '1inch API key not configured. Please add NEXT_PUBLIC_1INCH_API_KEY to your .env.local file. ' +
         'You can get an API key from https://portal.1inch.dev/'
       )
+    }
+  }
+
+  private checkInitialization(): void {
+    if (this.initError) {
+      throw this.initError
     }
   }
 
@@ -65,6 +72,9 @@ export class OneInchAPIClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
+    // Check if client was initialized properly
+    this.checkInitialization()
+    
     this.checkRateLimit(endpoint)
 
     const url = `${this.baseURL}${endpoint}`
@@ -164,5 +174,27 @@ export class OneInchAPIClient {
   }
 }
 
-// Singleton instance for the application
-export const oneInchClient = new OneInchAPIClient()
+// Lazy initialization for the client
+let _clientInstance: OneInchAPIClient | null = null
+let _clientError: Error | null = null
+
+export function getOneInchClient(): OneInchAPIClient | null {
+  // Return cached instance if available
+  if (_clientInstance !== null) {
+    return _clientInstance
+  }
+  
+  // Return null if we've already tried and failed
+  if (_clientError !== null) {
+    return null
+  }
+  
+  try {
+    _clientInstance = new OneInchAPIClient()
+    return _clientInstance
+  } catch (error) {
+    _clientError = error as Error
+    console.warn('Failed to initialize 1inch client:', error)
+    return null
+  }
+}

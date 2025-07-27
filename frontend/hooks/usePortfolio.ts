@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useAccount } from 'wagmi'
-import { portfolioService } from '@/lib/api/1inch'
+import { getPortfolioService, OneInchAPIError } from '@/lib/api/1inch'
 
 export function usePortfolio(chains?: number[]) {
   const { address } = useAccount()
@@ -10,31 +10,47 @@ export function usePortfolio(chains?: number[]) {
     queryFn: async () => {
       if (!address) throw new Error('No wallet address')
       
-      // Use 1inch API to fetch real portfolio data
-      const portfolio = await portfolioService.getPortfolio(
-        address,
-        chains || [1, 137, 10, 42161] // Default chains
-      )
-      
-      // Transform to match our existing interface
-      return {
-        address: portfolio.address,
-        total_value_usd: portfolio.totalValueUSD,
-        chains: portfolio.chains.map(c => c.chainId),
-        tokens: portfolio.chains.flatMap(chain => 
-          chain.tokens.map(token => ({
-            address: token.address,
-            symbol: token.symbol,
-            name: token.name,
-            decimals: token.decimals,
-            chain_id: token.chainId,
-            balance: token.balance,
-            balance_usd: token.valueUSD,
-            price_usd: token.priceUSD,
-            logo_url: token.logoURI
-          }))
-        ),
-        last_updated: portfolio.lastUpdated.toISOString()
+      try {
+        // Use 1inch API to fetch real portfolio data
+        const portfolioService = getPortfolioService()
+        const portfolio = await portfolioService.getPortfolio(
+          address,
+          chains || [1, 137, 10, 42161] // Default chains
+        )
+        
+        // Transform to match our existing interface
+        return {
+          address: portfolio.address,
+          total_value_usd: portfolio.totalValueUSD,
+          chains: portfolio.chains.map(c => c.chainId),
+          tokens: portfolio.chains.flatMap(chain => 
+            chain.tokens.map(token => ({
+              address: token.address,
+              symbol: token.symbol,
+              name: token.name,
+              decimals: token.decimals,
+              chain_id: token.chainId,
+              balance: token.balance,
+              balance_usd: token.valueUSD,
+              price_usd: token.priceUSD,
+              logo_url: token.logoURI
+            }))
+          ),
+          last_updated: portfolio.lastUpdated.toISOString()
+        }
+      } catch (error) {
+        if (error instanceof OneInchAPIError && error.message.includes('API key not configured')) {
+          // Return empty portfolio when API key is missing
+          return {
+            address: address,
+            total_value_usd: 0,
+            chains: [],
+            tokens: [],
+            last_updated: new Date().toISOString()
+          }
+        }
+        // Re-throw other errors to be handled by React Query
+        throw error
       }
     },
     enabled: !!address,

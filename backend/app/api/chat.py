@@ -60,12 +60,15 @@ async def websocket_endpoint(
     active_connections[client_id] = websocket
     
     # Get or create session ID for user
-    session_id = None
     if user:
+        # Authenticated user - use their address for session
         session_id = user_sessions.get(user.address)
         if not session_id:
             session_id = f"session_{user.address}_{uuid.uuid4().hex[:8]}"
             user_sessions[user.address] = session_id
+    else:
+        # Unauthenticated user - use client_id as session
+        session_id = f"session_anon_{client_id}"
     
     # Log connection
     performance_logger.log_custom(

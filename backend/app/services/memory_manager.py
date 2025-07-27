@@ -84,8 +84,18 @@ class ConversationMemoryManager:
         except:
             self.encoding = tiktoken.get_encoding("cl100k_base")
         
-        # Start cleanup task
-        asyncio.create_task(self._cleanup_expired_sessions())
+        # Cleanup task will be started when first accessed
+        self._cleanup_task: Optional[asyncio.Task] = None
+    
+    def _ensure_cleanup_task(self):
+        """Ensure cleanup task is running."""
+        if self._cleanup_task is None:
+            try:
+                loop = asyncio.get_running_loop()
+                self._cleanup_task = loop.create_task(self._cleanup_expired_sessions())
+            except RuntimeError:
+                # No running loop, task will be created when needed
+                pass
     
     def _count_tokens(self, text: str) -> int:
         """Count tokens in text."""
@@ -111,6 +121,7 @@ class ConversationMemoryManager:
         Returns:
             Conversation session
         """
+        self._ensure_cleanup_task()
         async with self._lock:
             if session_id not in self.sessions:
                 self.sessions[session_id] = ConversationSession(

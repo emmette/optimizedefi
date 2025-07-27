@@ -36,8 +36,12 @@ export function useChat() {
       setIsConnected(false)
     })
 
+    wsClient.current.onOpen(() => {
+      console.log('Chat WebSocket connected')
+      setIsConnected(true)
+    })
+
     wsClient.current.connect()
-    setIsConnected(true)
 
     return () => {
       wsClient.current?.disconnect()

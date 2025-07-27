@@ -24,6 +24,9 @@ const customJestConfig = {
     '!**/*.d.ts',
     '!**/node_modules/**',
   ],
+  transformIgnorePatterns: [
+    'node_modules/(?!(wagmi|@wagmi|viem|@web3modal)/)',
+  ],
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async

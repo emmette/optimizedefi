@@ -2,22 +2,44 @@
 
 This guide explains how to run tests for the OptimizeDeFi application.
 
+## Quick Start
+
+```bash
+# Run all tests with the helper script
+./scripts/run_tests.sh
+
+# Or run the manual chat service test
+python scripts/test_chat_service.py
+```
+
 ## Backend Tests
+
+### Installing Test Dependencies
+
+The backend container doesn't include test dependencies by default. Install them first:
+
+```bash
+# Install pytest and related packages
+docker-compose exec backend pip install pytest pytest-asyncio pytest-cov
+
+# Or use the development Dockerfile (includes test dependencies)
+docker build -f backend/Dockerfile.dev -t optimizedefi-backend-dev backend/
+```
 
 ### Running All Backend Tests
 
 ```bash
-# From the project root
-docker-compose exec backend pytest
+# From the project root (after installing pytest)
+docker-compose exec backend python -m pytest
 
 # With coverage
-docker-compose exec backend pytest --cov=app --cov-report=html
+docker-compose exec backend python -m pytest --cov=app --cov-report=html
 
 # Run specific test file
-docker-compose exec backend pytest tests/api/test_chat_websocket.py
+docker-compose exec backend python -m pytest tests/api/test_chat_websocket.py
 
 # Run with verbose output
-docker-compose exec backend pytest -v
+docker-compose exec backend python -m pytest -v
 ```
 
 ### Backend Test Structure

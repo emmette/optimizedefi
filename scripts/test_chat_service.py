@@ -86,8 +86,15 @@ class ChatServiceTester:
             if typing_msg.get("type") == "typing":
                 print("✅ Received typing indicator")
             
-            # Should receive AI response
+            # May receive routing information first
             response = json.loads(ws.recv())
+            if response.get("type") == "routing":
+                print("✅ Received routing information")
+                print(f"   Selected agent: {response.get('metadata', {}).get('selected_agent', 'unknown')}")
+                # Get the actual AI response
+                response = json.loads(ws.recv())
+            
+            # Should receive AI response
             if response.get("type") == "ai_response":
                 print("✅ Received AI response")
                 print(f"   Content: {response.get('content', '')[:100]}...")

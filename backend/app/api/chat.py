@@ -181,7 +181,9 @@ async def websocket_endpoint(
                                         if "messages" in node_output and node_output["messages"]:
                                             last_msg = node_output["messages"][-1]
                                             if isinstance(last_msg, AIMessage):
-                                                agent_name = last_msg.metadata.get("agent", "AI")
+                                                # Get metadata from additional_kwargs or use defaults
+                                                msg_metadata = getattr(last_msg, 'additional_kwargs', {})
+                                                agent_name = msg_metadata.get("agent", "AI")
                                                 response_content = last_msg.content
                                                 
                                                 # Send response
@@ -190,7 +192,7 @@ async def websocket_endpoint(
                                                     content=response_content,
                                                     metadata={
                                                         "agent": agent_name,
-                                                        "agent_type": last_msg.metadata.get("agent_type")
+                                                        "agent_type": msg_metadata.get("agent_type")
                                                     }
                                                 )
                                                 await websocket.send_json(response_msg.to_dict())
@@ -206,12 +208,14 @@ async def websocket_endpoint(
                             if final_state["messages"]:
                                 last_msg = final_state["messages"][-1]
                                 if isinstance(last_msg, AIMessage):
+                                    # Get metadata from additional_kwargs or use defaults
+                                    msg_metadata = getattr(last_msg, 'additional_kwargs', {})
                                     response_msg = ChatMessage(
                                         type="ai_response",
                                         content=last_msg.content,
                                         metadata={
-                                            "agent": last_msg.metadata.get("agent", "AI"),
-                                            "agent_type": last_msg.metadata.get("agent_type"),
+                                            "agent": msg_metadata.get("agent", "AI"),
+                                            "agent_type": msg_metadata.get("agent_type"),
                                             "routing": final_state.get("routing_result")
                                         }
                                     )
@@ -323,9 +327,11 @@ async def send_chat_message(
             last_msg = final_state["messages"][-1]
             if isinstance(last_msg, AIMessage):
                 response_content = last_msg.content
+                # Get metadata from additional_kwargs or use defaults
+                msg_metadata = getattr(last_msg, 'additional_kwargs', {})
                 agent_info = {
-                    "agent": last_msg.metadata.get("agent"),
-                    "agent_type": last_msg.metadata.get("agent_type")
+                    "agent": msg_metadata.get("agent"),
+                    "agent_type": msg_metadata.get("agent_type")
                 }
         
         return {

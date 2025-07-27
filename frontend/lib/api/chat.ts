@@ -24,6 +24,8 @@ export class ChatWebSocketClient {
   private reconnectAttempts = 0
   private maxReconnectAttempts = 5
   private reconnectDelay = 1000
+  private isIntentionalDisconnect = false
+  private connectionTimeout?: NodeJS.Timeout
 
   constructor(clientId: string, accessToken?: string) {
     this.clientId = clientId
@@ -31,6 +33,13 @@ export class ChatWebSocketClient {
   }
 
   connect() {
+    // Clear any existing connection first
+    if (this.ws) {
+      this.disconnect()
+    }
+
+    this.isIntentionalDisconnect = false
+    
     let wsUrl = `${WS_BASE_URL}${API_ENDPOINTS.chatWebSocket(this.clientId)}`
     
     // Add token to query params if available
@@ -41,8 +50,20 @@ export class ChatWebSocketClient {
     try {
       this.ws = new WebSocket(wsUrl)
       
+      // Set a connection timeout
+      this.connectionTimeout = setTimeout(() => {
+        if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {
+          console.log('WebSocket connection timeout, closing...')
+          this.ws.close()
+        }
+      }, 10000) // 10 second timeout
+      
       this.ws.onopen = () => {
         console.log('WebSocket connected')
+        // Clear the connection timeout
+        if (this.connectionTimeout) {
+          clearTimeout(this.connectionTimeout)
+        }
         this.reconnectAttempts = 0
         if (this.onOpenCallback) {
           this.onOpenCallback()
@@ -69,21 +90,32 @@ export class ChatWebSocketClient {
       
       this.ws.onclose = () => {
         console.log('WebSocket disconnected')
+        // Clear the connection timeout
+        if (this.connectionTimeout) {
+          clearTimeout(this.connectionTimeout)
+        }
+        
         if (this.onCloseCallback) {
           this.onCloseCallback()
         }
         
-        // Attempt to reconnect
-        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+        // Only attempt to reconnect if not intentionally disconnected
+        if (!this.isIntentionalDisconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
           this.reconnectAttempts++
+          const delay = Math.min(this.reconnectDelay * this.reconnectAttempts, 10000) // Max 10s delay
+          console.log(`Attempting to reconnect in ${delay}ms... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
           setTimeout(() => {
-            console.log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
-            this.connect()
-          }, this.reconnectDelay * this.reconnectAttempts)
+            if (!this.isIntentionalDisconnect) {
+              this.connect()
+            }
+          }, delay)
         }
       }
     } catch (error) {
       console.error('Failed to create WebSocket connection:', error)
+      if (this.connectionTimeout) {
+        clearTimeout(this.connectionTimeout)
+      }
     }
   }
 
@@ -101,8 +133,23 @@ export class ChatWebSocketClient {
   }
 
   disconnect() {
+    this.isIntentionalDisconnect = true
+    this.reconnectAttempts = 0
+    
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout)
+    }
+    
     if (this.ws) {
-      this.ws.close()
+      // Remove event handlers to prevent memory leaks
+      this.ws.onopen = null
+      this.ws.onmessage = null
+      this.ws.onerror = null
+      this.ws.onclose = null
+      
+      if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
+        this.ws.close()
+      }
       this.ws = null
     }
   }

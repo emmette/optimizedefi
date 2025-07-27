@@ -50,7 +50,7 @@ export function ChatPanel({ onSuggestedAction }: ChatPanelProps) {
       <div className="px-5 py-6 border-b border-border flex justify-between items-center">
         <div>
           <h2 className="text-lg font-semibold">AI Assistant</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground" suppressHydrationWarning>
             {isWalletConnected 
               ? (isConnected 
                   ? 'Portfolio optimization help' 
@@ -59,7 +59,7 @@ export function ChatPanel({ onSuggestedAction }: ChatPanelProps) {
           </p>
         </div>
         {isWalletConnected && (
-          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} suppressHydrationWarning />
         )}
       </div>
 

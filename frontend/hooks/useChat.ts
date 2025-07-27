@@ -12,43 +12,65 @@ export function useChat() {
   const wsClient = useRef<ChatWebSocketClient | null>(null)
 
   useEffect(() => {
-    if (!address) return
-
-    // Create WebSocket client with wallet address as client ID and access token
-    wsClient.current = new ChatWebSocketClient(address, accessToken || undefined)
-
-    wsClient.current.onMessage((message: ChatWebSocketMessage) => {
-      if (message.type === 'ai_response') {
-        setIsTyping(false)
-        setMessages(prev => [...prev, {
-          id: Date.now().toString(),
-          content: message.content,
-          role: 'assistant',
-          timestamp: message.timestamp
-        }])
+    if (!address) {
+      // Clean up existing connection when wallet disconnects
+      if (wsClient.current) {
+        wsClient.current.disconnect()
+        wsClient.current = null
       }
-    })
+      return
+    }
 
-    wsClient.current.onError((error) => {
-      console.error('Chat WebSocket error:', error)
-      setIsConnected(false)
-    })
+    // Only create new client if none exists or address changed
+    const shouldCreateNewClient = !wsClient.current || 
+      (wsClient.current && (wsClient.current as any).clientId !== address)
+    
+    if (shouldCreateNewClient) {
+      // Clean up existing connection first
+      if (wsClient.current) {
+        wsClient.current.disconnect()
+      }
 
-    wsClient.current.onClose(() => {
-      setIsConnected(false)
-    })
+      // Create WebSocket client with wallet address as client ID and access token
+      wsClient.current = new ChatWebSocketClient(address, accessToken || undefined)
 
-    wsClient.current.onOpen(() => {
-      console.log('Chat WebSocket connected')
-      setIsConnected(true)
-    })
+      wsClient.current.onMessage((message: ChatWebSocketMessage) => {
+        if (message.type === 'ai_response') {
+          setIsTyping(false)
+          setMessages(prev => [...prev, {
+            id: Date.now().toString(),
+            content: message.content,
+            role: 'assistant',
+            timestamp: message.timestamp
+          }])
+        } else if (message.type === 'typing') {
+          setIsTyping(true)
+        }
+      })
 
-    wsClient.current.connect()
+      wsClient.current.onError((error) => {
+        console.error('Chat WebSocket error:', error)
+        setIsConnected(false)
+      })
+
+      wsClient.current.onClose(() => {
+        setIsConnected(false)
+      })
+
+      wsClient.current.onOpen(() => {
+        console.log('Chat WebSocket connected')
+        setIsConnected(true)
+        setIsTyping(false)
+      })
+
+      wsClient.current.connect()
+    }
 
     return () => {
-      wsClient.current?.disconnect()
+      // Don't disconnect on cleanup, we'll manage lifecycle manually
+      // to prevent unnecessary reconnections
     }
-  }, [address, accessToken])
+  }, [address]) // Remove accessToken from dependencies to prevent reconnects on token refresh
 
   const sendMessage = useCallback((content: string) => {
     if (!wsClient.current?.isConnected()) {

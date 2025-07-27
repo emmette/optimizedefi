@@ -19,23 +19,30 @@ export function ConnectButton() {
   const { signIn, signOut, isAuthenticated, isLoading: isAuthLoading } = useSiwe()
   const checkSession = useAuthStore(state => state.checkSession)
   
-  // Check session on mount
+  // Check session on mount and auto-prompt for SIWE if needed
   useEffect(() => {
-    if (isConnected) {
-      checkSession()
-    }
-  }, [isConnected, checkSession])
-  
-  // Auto-prompt for SIWE after wallet connection
-  useEffect(() => {
-    if (isConnected && !isAuthenticated && !isAuthLoading) {
-      // Small delay to ensure wallet is fully connected
-      const timer = setTimeout(() => {
-        signIn()
+    let mounted = true
+    
+    const handleAuth = async () => {
+      if (!isConnected || isAuthLoading) return
+      
+      // First check if we have an existing session
+      await checkSession()
+      
+      // Wait a bit for auth state to update
+      setTimeout(() => {
+        if (mounted && isConnected && !isAuthenticated && !isAuthLoading) {
+          signIn()
+        }
       }, 500)
-      return () => clearTimeout(timer)
     }
-  }, [isConnected, isAuthenticated, isAuthLoading, signIn])
+    
+    handleAuth()
+    
+    return () => {
+      mounted = false
+    }
+  }, [isConnected]) // Only depend on isConnected to avoid re-runs
 
   const formatAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`

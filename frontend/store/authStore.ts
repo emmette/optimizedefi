@@ -10,6 +10,7 @@ interface AuthState {
   issuedAt: string | null
   expirationTime: string | null
   isLoading: boolean
+  accessToken: string | null
   
   // Actions
   setAuth: (data: {
@@ -17,6 +18,7 @@ interface AuthState {
     chainId: number
     issuedAt: string
     expirationTime?: string
+    accessToken?: string
   }) => void
   clearAuth: () => void
   setLoading: (loading: boolean) => void
@@ -35,6 +37,7 @@ export const useAuthStore = create<AuthState>()(
       issuedAt: null,
       expirationTime: null,
       isLoading: false,
+      accessToken: null,
       
       // Set authentication data
       setAuth: (data) => {
@@ -44,6 +47,7 @@ export const useAuthStore = create<AuthState>()(
           chainId: data.chainId,
           issuedAt: data.issuedAt,
           expirationTime: data.expirationTime || null,
+          accessToken: data.accessToken || null,
         })
       },
       
@@ -55,6 +59,7 @@ export const useAuthStore = create<AuthState>()(
           chainId: null,
           issuedAt: null,
           expirationTime: null,
+          accessToken: null,
         })
       },
       
@@ -100,6 +105,10 @@ export const useAuthStore = create<AuthState>()(
           const data = await response.json()
           
           if (response.ok && data.success) {
+            // Store the access token if provided
+            if (data.access_token) {
+              set({ accessToken: data.access_token })
+            }
             // Fetch session data after successful login
             await get().checkSession()
             return true
@@ -139,6 +148,7 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
         address: state.address,
         chainId: state.chainId,
+        accessToken: state.accessToken,
       }),
     }
   )

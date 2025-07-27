@@ -16,6 +16,7 @@ export interface ChatWebSocketMessage {
 export class ChatWebSocketClient {
   private ws: WebSocket | null = null
   private clientId: string
+  private accessToken?: string
   private onMessageCallback?: (message: ChatWebSocketMessage) => void
   private onErrorCallback?: (error: Event) => void
   private onCloseCallback?: () => void
@@ -24,12 +25,18 @@ export class ChatWebSocketClient {
   private maxReconnectAttempts = 5
   private reconnectDelay = 1000
 
-  constructor(clientId: string) {
+  constructor(clientId: string, accessToken?: string) {
     this.clientId = clientId
+    this.accessToken = accessToken
   }
 
   connect() {
-    const wsUrl = `${WS_BASE_URL}${API_ENDPOINTS.chatWebSocket(this.clientId)}`
+    let wsUrl = `${WS_BASE_URL}${API_ENDPOINTS.chatWebSocket(this.clientId)}`
+    
+    // Add token to query params if available
+    if (this.accessToken) {
+      wsUrl += `?token=${encodeURIComponent(this.accessToken)}`
+    }
     
     try {
       this.ws = new WebSocket(wsUrl)

@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useAccount } from 'wagmi'
 import { ChatWebSocketClient, ChatMessage, ChatWebSocketMessage } from '@/lib/api/chat'
+import { useAuthStore } from '@/store/authStore'
 
 export function useChat() {
   const { address } = useAccount()
+  const accessToken = useAuthStore((state) => state.accessToken)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isConnected, setIsConnected] = useState(false)
   const [isTyping, setIsTyping] = useState(false)
@@ -12,8 +14,8 @@ export function useChat() {
   useEffect(() => {
     if (!address) return
 
-    // Create WebSocket client with wallet address as client ID
-    wsClient.current = new ChatWebSocketClient(address)
+    // Create WebSocket client with wallet address as client ID and access token
+    wsClient.current = new ChatWebSocketClient(address, accessToken || undefined)
 
     wsClient.current.onMessage((message: ChatWebSocketMessage) => {
       if (message.type === 'ai_response') {
@@ -46,7 +48,7 @@ export function useChat() {
     return () => {
       wsClient.current?.disconnect()
     }
-  }, [address])
+  }, [address, accessToken])
 
   const sendMessage = useCallback((content: string) => {
     if (!wsClient.current?.isConnected()) {

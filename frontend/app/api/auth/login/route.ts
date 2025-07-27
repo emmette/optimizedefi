@@ -49,10 +49,32 @@ export async function POST(request: NextRequest) {
     session.nonce = undefined
     await session.save()
 
+    // Call backend API to get JWT token
+    let accessToken = null
+    try {
+      const backendResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message,
+          signature,
+          address: siweMessage.address
+        })
+      })
+      
+      if (backendResponse.ok) {
+        const backendData = await backendResponse.json()
+        accessToken = backendData.access_token
+      }
+    } catch (error) {
+      console.error('Failed to get backend JWT:', error)
+    }
+
     return NextResponse.json({
       success: true,
       address: siweMessage.address,
-      chainId: siweMessage.chainId
+      chainId: siweMessage.chainId,
+      access_token: accessToken
     })
   } catch (error) {
     console.error('Login error:', error)

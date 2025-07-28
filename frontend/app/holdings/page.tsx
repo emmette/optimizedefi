@@ -3,8 +3,9 @@
 import { useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Search, TrendingUp, TrendingDown } from 'lucide-react'
-// import { usePortfolio } from '@/hooks/usePortfolio'
-// import { useAccount } from 'wagmi'
+import { usePortfolio } from '@/hooks/usePortfolio'
+import { useAccount } from 'wagmi'
+import { CardSkeleton } from '@/components/ui/LoadingSkeleton'
 
 // Mock holdings data
 const mockHoldings = [
@@ -110,12 +111,29 @@ export default function HoldingsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'value' | 'change' | 'allocation'>('value')
   const [filterChain, setFilterChain] = useState<string>('all')
-  // TODO: Implement portfolio data integration
-  // const { isConnected } = useAccount()
-  // const { data: portfolio, isLoading } = usePortfolio()
+  const { isConnected } = useAccount()
+  const { data: portfolio, isLoading } = usePortfolio()
+
+  // Transform portfolio data to holdings format
+  const holdings = portfolio ? portfolio.chains.flatMap(chain => 
+    chain.tokens.map(token => ({
+      id: `${chain.chain_id}-${token.address}`,
+      token: token.symbol,
+      name: token.name,
+      chain: chain.chain_name,
+      chainId: chain.chain_id,
+      balance: token.balance_human,
+      value: token.balance_usd,
+      price: token.price_usd,
+      change24h: 0, // TODO: Implement 24h change calculation
+      allocation: (token.balance_usd / portfolio.total_value_usd) * 100,
+      address: token.address,
+      logo_url: token.logo_url
+    }))
+  ) : mockHoldings
 
   // Filter and sort holdings
-  const filteredHoldings = mockHoldings
+  const filteredHoldings = holdings
     .filter(holding => {
       const matchesSearch = holding.token.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           holding.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -135,7 +153,42 @@ export default function HoldingsPage() {
       }
     })
 
-  const totalValue = mockHoldings.reduce((sum, holding) => sum + holding.value, 0)
+  const totalValue = portfolio?.total_value_usd || mockHoldings.reduce((sum, holding) => sum + holding.value, 0)
+  
+  // Calculate chain summary from real data
+  const chainSummary = portfolio ? portfolio.chains.map(chain => ({
+    chain: chain.chain_name,
+    value: chain.total_value_usd,
+    percentage: (chain.total_value_usd / portfolio.total_value_usd) * 100,
+    tokens: chain.tokens.length
+  })) : mockChainSummary
+
+  if (!isConnected) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold mb-2">Connect Your Wallet</h2>
+          <p className="text-muted-foreground">Please connect your wallet to view your holdings</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="px-8 py-6 space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Holdings</h1>
+          <p className="text-muted-foreground mt-1">Loading your portfolio...</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <CardSkeleton key={i} />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="px-8 py-6 space-y-6">
@@ -147,7 +200,7 @@ export default function HoldingsPage() {
 
       {/* Chain Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {mockChainSummary.map((chain) => (
+        {chainSummary.map((chain) => (
           <Card key={chain.chain} className="p-4">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-medium">{chain.chain}</h3>
@@ -192,10 +245,11 @@ export default function HoldingsPage() {
             className="px-4 py-2 bg-background border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="all">All Chains</option>
-            <option value="Ethereum">Ethereum</option>
-            <option value="Polygon">Polygon</option>
-            <option value="Optimism">Optimism</option>
-            <option value="Arbitrum">Arbitrum</option>
+            {portfolio && portfolio.chains.map(chain => (
+              <option key={chain.chain_id} value={chain.chain_name}>
+                {chain.chain_name}
+              </option>
+            ))}
           </select>
 
           {/* Sort */}
@@ -299,7 +353,7 @@ export default function HoldingsPage() {
           <div>
             <h3 className="text-lg font-semibold mb-1">Portfolio Summary</h3>
             <p className="text-sm text-muted-foreground">
-              {mockHoldings.length} assets across {mockChainSummary.length} chains
+              {holdings.length} assets across {chainSummary.length} chains
             </p>
           </div>
           <div className="text-right">

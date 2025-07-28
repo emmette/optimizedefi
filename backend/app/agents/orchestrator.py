@@ -240,16 +240,48 @@ Available Agents:
 3. swap - Token swaps, quotes, and exchange operations
 4. general - General DeFi questions, education, and other queries
 
-Respond with a JSON object containing your routing decision."""
+Respond with ONLY a JSON object in this exact format:
+{{
+    "selected_agent": "agent_name",
+    "confidence": 0.8,
+    "reasoning": "Brief explanation",
+    "extracted_params": {{}}
+}}"""
         
         try:
             # Invoke the LLM
             response = await self.invoke(routing_prompt)
             
-            # Extract JSON from response
-            json_match = re.search(r'\{[^}]+\}', response.content, re.DOTALL)
-            if json_match:
-                result = json.loads(json_match.group())
+            # Extract JSON from response - try multiple methods
+            content = response.content.strip()
+            
+            # Method 1: Try to parse the entire content as JSON
+            try:
+                result = json.loads(content)
+            except json.JSONDecodeError:
+                # Method 2: Find JSON block in markdown code block
+                json_block_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', content, re.DOTALL)
+                if json_block_match:
+                    result = json.loads(json_block_match.group(1))
+                else:
+                    # Method 3: Find first complete JSON object
+                    # This regex finds a JSON object by matching balanced braces
+                    brace_count = 0
+                    start_idx = content.find('{')
+                    if start_idx == -1:
+                        raise ValueError("No JSON object found in response")
+                    
+                    for i, char in enumerate(content[start_idx:], start_idx):
+                        if char == '{':
+                            brace_count += 1
+                        elif char == '}':
+                            brace_count -= 1
+                            if brace_count == 0:
+                                json_str = content[start_idx:i+1]
+                                result = json.loads(json_str)
+                                break
+                    else:
+                        raise ValueError("Unclosed JSON object in response")
                 
                 # Validate and normalize result
                 if "selected_agent" not in result:

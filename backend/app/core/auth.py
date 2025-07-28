@@ -334,3 +334,17 @@ async def get_current_user_ws(
     
     # Verify token
     return verify_token(token)
+
+
+async def get_current_user_optional(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer(auto_error=False))
+) -> Optional[TokenData]:
+    """
+    Optional authentication dependency.
+    Returns user data if authenticated, None otherwise.
+    Does not raise HTTPException.
+    """
+    if not credentials:
+        return None
+    
+    return verify_token(credentials.credentials)

@@ -3,7 +3,7 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 from datetime import datetime
 
-from app.core.auth import validate_ethereum_address, get_current_user, TokenData
+from app.core.auth import validate_ethereum_address, get_current_user, get_current_user_optional, TokenData
 from app.services.oneinch import oneinch_service
 from app.services.portfolio_metrics import portfolio_metrics_service
 from app.services.cache import cached
@@ -58,7 +58,7 @@ class PortfolioMetricsResponse(BaseModel):
 async def get_portfolio(
     address: str,
     chains: Optional[List[int]] = Query(default=None),
-    _: Optional[TokenData] = Depends(get_current_user)  # Optional auth
+    current_user: Optional[TokenData] = Depends(get_current_user_optional)
 ):
     """
     Get portfolio data for a wallet address across multiple chains.
@@ -148,7 +148,7 @@ async def get_portfolio(
 async def get_portfolio_metrics(
     address: str,
     chains: Optional[List[int]] = Query(default=None),
-    _: Optional[TokenData] = Depends(get_current_user)  # Optional auth
+    current_user: Optional[TokenData] = Depends(get_current_user_optional)
 ):
     """
     Get detailed portfolio metrics and analysis.

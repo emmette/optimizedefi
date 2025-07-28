@@ -9,11 +9,18 @@ import { useAuthStore } from '@/store/authStore'
 
 export function ConnectButton() {
   const { address, isConnected, chain } = useAccount()
-  const { connect, connectors, isPending } = useConnect()
+  const { connect, connectors, isPending, error: connectError } = useConnect()
   const { disconnect } = useDisconnect()
   const { data: ensName } = useEnsName({ address })
   const [showConnectors, setShowConnectors] = useState(false)
   const [showAccountMenu, setShowAccountMenu] = useState(false)
+  
+  // Log connection errors for debugging
+  useEffect(() => {
+    if (connectError) {
+      console.error('Wallet connection error:', connectError)
+    }
+  }, [connectError])
   
   // SIWE authentication
   const { signIn, signOut, isAuthenticated, isLoading: isAuthLoading } = useSiwe()
@@ -159,19 +166,26 @@ export function ConnectButton() {
           <Card className="absolute right-0 top-full mt-2 w-64 p-4 z-50">
             <h3 className="font-medium mb-3">Connect a wallet</h3>
             <div className="space-y-2">
-              {connectors.map((connector) => (
-                <button
-                  key={connector.id}
-                  onClick={() => {
-                    connect({ connector })
-                    setShowConnectors(false)
-                  }}
-                  className="w-full flex items-center gap-3 p-3 bg-secondary hover:bg-secondary/80 rounded-lg transition-colors text-left"
-                >
-                  <Wallet className="h-5 w-5" />
-                  <span className="font-medium">{connector.name}</span>
-                </button>
-              ))}
+              {connectors.length > 0 ? (
+                connectors.map((connector) => (
+                  <button
+                    key={connector.id}
+                    onClick={() => {
+                      console.log(`Connecting with ${connector.name}...`)
+                      connect({ connector })
+                      setShowConnectors(false)
+                    }}
+                    className="w-full flex items-center gap-3 p-3 bg-secondary hover:bg-secondary/80 rounded-lg transition-colors text-left"
+                  >
+                    <Wallet className="h-5 w-5" />
+                    <span className="font-medium">{connector.name}</span>
+                  </button>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No wallet connectors available. Please ensure MetaMask or another wallet is installed.
+                </p>
+              )}
             </div>
           </Card>
         </>

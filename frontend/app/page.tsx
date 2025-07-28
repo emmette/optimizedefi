@@ -103,16 +103,31 @@ export default function OverviewPage() {
   const portfolioData = portfolio ? {
     totalValue: portfolio.total_value_usd,
     change24h: 2.34, // TODO: Calculate from historical data
-    changeValue24h: 2876.43, // TODO: Calculate from historical data
-    risk: 'Medium',
-    diversification: 'Good',
-    chains: portfolio.chains.map(chainId => ({
-      name: chainId === 1 ? 'Ethereum' : chainId === 137 ? 'Polygon' : chainId === 10 ? 'Optimism' : 'Arbitrum',
-      value: portfolio.tokens.filter(t => t.chain_id === chainId).reduce((acc, t) => acc + t.balance_usd, 0),
-      percentage: (portfolio.tokens.filter(t => t.chain_id === chainId).reduce((acc, t) => acc + t.balance_usd, 0) / portfolio.total_value_usd) * 100
+    changeValue24h: portfolio.total_value_usd * 0.0234, // TODO: Calculate from historical data
+    risk: getRiskLevel(portfolio.risk_assessment),
+    diversification: getDiversificationLevel(portfolio.diversification_score),
+    chains: portfolio.chains.map(chain => ({
+      name: chain.chain_name,
+      value: chain.total_value_usd,
+      percentage: (chain.total_value_usd / portfolio.total_value_usd) * 100
     })),
     performance: mockPortfolioData.performance // TODO: Fetch from history endpoint
   } : mockPortfolioData
+  
+  // Helper functions to convert metrics to display strings
+  function getRiskLevel(riskAssessment: any): string {
+    const score = riskAssessment?.score || 50
+    if (score < 30) return 'Low'
+    if (score < 70) return 'Medium'
+    return 'High'
+  }
+  
+  function getDiversificationLevel(score: number): string {
+    if (score >= 80) return 'Excellent'
+    if (score >= 60) return 'Good'
+    if (score >= 40) return 'Fair'
+    return 'Poor'
+  }
   
   const isPositiveChange = portfolioData.change24h > 0
 
@@ -269,14 +284,19 @@ export default function OverviewPage() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
         <div className="lg:col-span-3">
           <D3PortfolioDonutChart 
-            tokens={portfolio?.tokens || []} 
+            tokens={portfolio ? portfolio.chains.flatMap(chain => chain.tokens) : []} 
             totalValue={portfolioData.totalValue} 
           />
         </div>
 
         <div className="lg:col-span-2">
           <D3ChainDistributionChart 
-            data={portfolioData.chains.map((chain, idx) => ({
+            data={portfolio ? portfolio.chains.map(chain => ({
+              chainId: chain.chain_id,
+              name: chain.chain_name,
+              value: chain.total_value_usd,
+              percentage: (chain.total_value_usd / portfolio.total_value_usd) * 100
+            })) : portfolioData.chains.map((chain, idx) => ({
               chainId: [1, 137, 10, 42161][idx] || 1,
               name: chain.name,
               value: chain.value,

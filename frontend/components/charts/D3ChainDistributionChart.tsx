@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import * as d3 from 'd3'
 import { Card } from '@/components/ui/card'
 import { ChartExportButton } from './ChartExportButton'
+import { getChainConfig } from '@/lib/chains'
 
 interface ChainData {
   chainId: number
@@ -16,13 +17,19 @@ interface D3ChainDistributionChartProps {
   data: ChainData[]
 }
 
-const chainColors: Record<number, string> = {
-  1: '#627EEA',     // Ethereum - Blue
-  137: '#8247E5',   // Polygon - Purple
-  10: '#FF0420',    // Optimism - Red
-  42161: '#2D374B', // Arbitrum - Dark Blue
-  56: '#F3BA2F',    // BSC - Yellow
-  43114: '#E84142', // Avalanche - Red
+// Use colors from chain config
+const getChainColor = (chainId: number): string => {
+  const config = getChainConfig(chainId)
+  const colorMap: Record<string, string> = {
+    'text-blue-500': '#3B82F6',
+    'text-purple-500': '#A855F7',
+    'text-red-500': '#EF4444',
+    'text-blue-600': '#2563EB',
+    'text-yellow-500': '#EAB308',
+    'text-red-600': '#DC2626',
+    'text-blue-400': '#60A5FA'
+  }
+  return config ? (colorMap[config.color] || '#666') : '#666'
 }
 
 export function D3ChainDistributionChart({ data }: D3ChainDistributionChartProps) {
@@ -71,10 +78,16 @@ export function D3ChainDistributionChart({ data }: D3ChainDistributionChartProps
       .attr('transform', `translate(0,${height})`)
       .call(xAxis)
       .selectAll('text')
-      .style('text-anchor', 'end')
-      .attr('dx', '-.8em')
-      .attr('dy', '.15em')
-      .attr('transform', 'rotate(-45)')
+      .style('text-anchor', 'middle')
+      .style('font-size', '12px')
+      .text(function(d) {
+        const chainData = data.find(chain => chain.name === d)
+        if (chainData) {
+          const config = getChainConfig(chainData.chainId)
+          return `${config?.logo || '⚪'} ${d}`
+        }
+        return d
+      })
 
     // Add Y axis
     g.append('g')
@@ -106,7 +119,7 @@ export function D3ChainDistributionChart({ data }: D3ChainDistributionChartProps
       .attr('width', xScale.bandwidth())
       .attr('y', height)
       .attr('height', 0)
-      .attr('fill', d => chainColors[d.chainId] || '#666')
+      .attr('fill', d => getChainColor(d.chainId))
       .style('cursor', 'pointer')
 
     // Animate bars
@@ -233,7 +246,7 @@ export function D3ChainDistributionChart({ data }: D3ChainDistributionChartProps
     legendItems.append('rect')
       .attr('width', 12)
       .attr('height', 12)
-      .attr('fill', d => chainColors[d.chainId] || '#666')
+      .attr('fill', d => getChainColor(d.chainId))
 
     legendItems.append('text')
       .attr('x', 18)

@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card'
 import { Wallet, ChevronDown, LogOut, Copy, ExternalLink, Shield } from 'lucide-react'
 import { useSiwe } from '@/hooks/useSiwe'
 import { useAuthStore } from '@/store/authStore'
+import { getChainConfig, getBlockExplorerUrl } from '@/lib/chains'
 
 export function ConnectButton() {
   const { address, isConnected, chain } = useAccount()
@@ -15,13 +16,7 @@ export function ConnectButton() {
   const [showConnectors, setShowConnectors] = useState(false)
   const [showAccountMenu, setShowAccountMenu] = useState(false)
   
-  // Chain information with colors and explorer URLs
-  const chainInfo = {
-    1: { name: 'Ethereum', color: 'bg-blue-500', explorer: 'https://etherscan.io' },
-    137: { name: 'Polygon', color: 'bg-purple-500', explorer: 'https://polygonscan.com' },
-    10: { name: 'Optimism', color: 'bg-red-500', explorer: 'https://optimistic.etherscan.io' },
-    42161: { name: 'Arbitrum', color: 'bg-blue-600', explorer: 'https://arbiscan.io' }
-  }
+  const chainConfig = chain ? getChainConfig(chain.id) : undefined
   
   // Log connection errors for debugging
   useEffect(() => {
@@ -97,11 +92,11 @@ export function ConnectButton() {
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">Connected to</p>
                 <div className="flex items-center gap-2">
-                  {chain && chainInfo[chain.id] && (
-                    <div className={`w-2 h-2 rounded-full ${chainInfo[chain.id].color}`} />
+                  {chainConfig && (
+                    <span className="text-lg">{chainConfig.logo}</span>
                   )}
                   <p className="font-medium">
-                    {chain ? (chainInfo[chain.id]?.name || chain.name) : 'Unknown Chain'}
+                    {chainConfig?.name || chain?.name || 'Unknown Chain'}
                   </p>
                 </div>
               </div>
@@ -117,7 +112,7 @@ export function ConnectButton() {
                     <Copy className="h-3 w-3" />
                   </button>
                   <a
-                    href={`${chain && chainInfo[chain.id] ? chainInfo[chain.id].explorer : 'https://etherscan.io'}/address/${address}`}
+                    href={chain ? getBlockExplorerUrl(chain.id, address) : `https://etherscan.io/address/${address}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-1 hover:bg-accent rounded transition-colors"

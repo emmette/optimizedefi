@@ -49,7 +49,7 @@ export function ConnectButton() {
     return () => {
       mounted = false
     }
-  }, [isConnected]) // Only depend on isConnected to avoid re-runs
+  }, [isConnected, isAuthLoading, isAuthenticated, checkSession, signIn]) // Include all dependencies
 
   const formatAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`

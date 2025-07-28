@@ -20,20 +20,23 @@ export function usePortfolio(chains?: number[]) {
         return portfolio
       } catch (error) {
         console.error('Failed to fetch portfolio:', error)
-        // Return empty portfolio on error
+        // Return empty portfolio on error with proper structure
         return {
           address: address,
           total_value_usd: 0,
           chains: [],
-          tokens: [],
+          diversification_score: 0,
+          risk_assessment: { score: 0, level: 'Unknown' },
+          performance: { change_24h: 0, change_7d: 0 },
           last_updated: new Date().toISOString()
-        }
+        } as PortfolioResponse
       }
     },
     enabled: !!address,
     refetchInterval: 30000, // Refetch every 30 seconds
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 10000, // Consider data stale after 10 seconds
   })
 }
 

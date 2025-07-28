@@ -111,8 +111,11 @@ export default function HoldingsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'value' | 'change' | 'allocation'>('value')
   const [filterChain, setFilterChain] = useState<string>('all')
-  const { isConnected } = useAccount()
+  const { isConnected, chain } = useAccount()
   const { data: portfolio, isLoading } = usePortfolio()
+  
+  // Check if on testnet
+  const isTestnet = chain?.id === 11155111 || chain?.testnet === true
 
   // Transform portfolio data to holdings format
   const holdings = portfolio ? portfolio.chains.flatMap(chain => 
@@ -170,6 +173,23 @@ export default function HoldingsPage() {
           <h2 className="text-2xl font-semibold mb-2">Connect Your Wallet</h2>
           <p className="text-muted-foreground">Please connect your wallet to view your holdings</p>
         </div>
+      </div>
+    )
+  }
+  
+  if (isTestnet) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Card className="max-w-md p-8 text-center space-y-4">
+          <div className="text-4xl mb-2">🧪</div>
+          <h2 className="text-2xl font-semibold">Testnet Detected</h2>
+          <p className="text-muted-foreground">
+            You're connected to {chain?.name || 'a testnet'}. Holdings tracking is only available on mainnet networks.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Please switch to Ethereum, Polygon, Optimism, or Arbitrum mainnet to view your holdings.
+          </p>
+        </Card>
       </div>
     )
   }

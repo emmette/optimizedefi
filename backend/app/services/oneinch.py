@@ -22,7 +22,7 @@ class OneInchService:
         self.api_key = settings.ONEINCH_API_KEY
         self.session: Optional[aiohttp.ClientSession] = None
         
-        # Chain configurations
+        # Chain configurations - only mainnet chains supported by 1inch
         self.chain_configs = {
             1: {"name": "Ethereum", "native": "ETH"},
             137: {"name": "Polygon", "native": "MATIC"},
@@ -32,6 +32,9 @@ class OneInchService:
             43114: {"name": "Avalanche", "native": "AVAX"},
             8453: {"name": "Base", "native": "ETH"},
         }
+        
+        # Testnet chain IDs (not supported by 1inch)
+        self.testnet_chains = {11155111, 80001, 420, 421613}  # Sepolia, Mumbai, Optimism Goerli, Arbitrum Goerli
     
     async def __aenter__(self):
         """Async context manager entry."""
@@ -184,8 +187,16 @@ class OneInchService:
         if chain_ids is None:
             chain_ids = list(self.chain_configs.keys())
         
-        # Filter to only supported chains
-        chain_ids = [cid for cid in chain_ids if cid in self.chain_configs]
+        # Filter to only supported mainnet chains (1inch doesn't support testnets)
+        supported_chain_ids = [cid for cid in chain_ids if cid in self.chain_configs]
+        testnet_chain_ids = [cid for cid in chain_ids if cid in self.testnet_chains]
+        
+        # Log if testnet chains were requested
+        if testnet_chain_ids:
+            print(f"Warning: Testnet chains requested but not supported by 1inch: {testnet_chain_ids}")
+        
+        # Only proceed with supported chains
+        chain_ids = supported_chain_ids
         
         # Fetch balances for all chains in parallel
         balance_tasks = [

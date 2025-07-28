@@ -99,6 +99,11 @@ export function ConnectButton() {
                     {chainConfig?.name || chain?.name || 'Unknown Chain'}
                   </p>
                 </div>
+                {chain?.id === 11155111 && (
+                  <p className="text-xs text-orange-500">
+                    ⚠️ Testnet - Portfolio data not available
+                  </p>
+                )}
               </div>
               
               <div className="space-y-2">

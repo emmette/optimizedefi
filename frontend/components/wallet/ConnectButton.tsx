@@ -15,6 +15,14 @@ export function ConnectButton() {
   const [showConnectors, setShowConnectors] = useState(false)
   const [showAccountMenu, setShowAccountMenu] = useState(false)
   
+  // Chain information with colors and explorer URLs
+  const chainInfo = {
+    1: { name: 'Ethereum', color: 'bg-blue-500', explorer: 'https://etherscan.io' },
+    137: { name: 'Polygon', color: 'bg-purple-500', explorer: 'https://polygonscan.com' },
+    10: { name: 'Optimism', color: 'bg-red-500', explorer: 'https://optimistic.etherscan.io' },
+    42161: { name: 'Arbitrum', color: 'bg-blue-600', explorer: 'https://arbiscan.io' }
+  }
+  
   // Log connection errors for debugging
   useEffect(() => {
     if (connectError) {
@@ -88,7 +96,14 @@ export function ConnectButton() {
             <Card className="absolute right-0 top-full mt-2 w-64 p-4 z-50 space-y-3">
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">Connected to</p>
-                <p className="font-medium">{chain?.name || 'Unknown Chain'}</p>
+                <div className="flex items-center gap-2">
+                  {chain && chainInfo[chain.id] && (
+                    <div className={`w-2 h-2 rounded-full ${chainInfo[chain.id].color}`} />
+                  )}
+                  <p className="font-medium">
+                    {chain ? (chainInfo[chain.id]?.name || chain.name) : 'Unknown Chain'}
+                  </p>
+                </div>
               </div>
               
               <div className="space-y-2">
@@ -102,7 +117,7 @@ export function ConnectButton() {
                     <Copy className="h-3 w-3" />
                   </button>
                   <a
-                    href={`https://etherscan.io/address/${address}`}
+                    href={`${chain && chainInfo[chain.id] ? chainInfo[chain.id].explorer : 'https://etherscan.io'}/address/${address}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-1 hover:bg-accent rounded transition-colors"

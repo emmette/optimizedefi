@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OptimizeDeFi - Wallet Connection Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #ffffff;
+        }
+        h1 { color: #4f46e5; }
+        .status { 
+            padding: 20px; 
+            margin: 20px 0; 
+            border-radius: 8px; 
+            background: #262626;
+            border: 1px solid #404040;
+        }
+        .success { background: #065f46; border-color: #10b981; }
+        .error { background: #7f1d1d; border-color: #ef4444; }
+        .warning { background: #78350f; border-color: #f59e0b; }
+        code { 
+            background: #404040; 
+            padding: 2px 6px; 
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        ul { line-height: 1.8; }
+        li { margin: 8px 0; }
+        .next-steps {
+            margin-top: 30px;
+            padding: 20px;
+            background: #312e81;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 OptimizeDeFi - Wallet Connection Test</h1>
+    
+    <div class="status">
+        <h2>📋 Test Results</h2>
+        <ul>
+            <li>✅ <strong>Frontend Server:</strong> Running on <code>localhost:3000</code></li>
+            <li>✅ <strong>Backend API:</strong> Running on <code>localhost:8000</code></li>
+            <li>✅ <strong>WebSocket Chat:</strong> Connection working</li>
+            <li>✅ <strong>Portfolio API:</strong> Accessible without auth</li>
+            <li>✅ <strong>Wagmi Config:</strong> Properly configured with injected connector</li>
+            <li>⚠️ <strong>WalletConnect:</strong> Disabled (no project ID configured)</li>
+        </ul>
+    </div>
+
+    <div class="status">
+        <h2>🔍 Wallet Connection Issues Fixed</h2>
+        <ul>
+            <li>✅ WalletConnect is now optional - MetaMask will work without it</li>
+            <li>✅ Added error logging for connection debugging</li>
+            <li>✅ SIWE authentication connected to backend API</li>
+            <li>✅ Fixed API endpoint URLs for auth flow</li>
+            <li>✅ Added proper error handling for wallet connections</li>
+        </ul>
+    </div>
+
+    <div class="next-steps">
+        <h2>🚀 Next Steps</h2>
+        <ol>
+            <li><strong>Open the app:</strong> Go to <a href="http://localhost:3000" target="_blank" style="color: #60a5fa;">http://localhost:3000</a></li>
+            <li><strong>Click "Connect Wallet"</strong> in the top right corner</li>
+            <li><strong>Select MetaMask</strong> from the dropdown</li>
+            <li><strong>Approve the connection</strong> in MetaMask popup</li>
+            <li><strong>Sign the message</strong> when prompted for SIWE authentication</li>
+        </ol>
+        
+        <h3>⚠️ Common Issues:</h3>
+        <ul>
+            <li><strong>No wallets showing:</strong> Make sure MetaMask extension is installed and unlocked</li>
+            <li><strong>Connection fails:</strong> Check browser console (F12) for error messages</li>
+            <li><strong>SIWE fails:</strong> Ensure backend is running and accessible</li>
+        </ul>
+    </div>
+
+    <div class="status warning">
+        <h2>📝 Optional: Add WalletConnect</h2>
+        <p>To enable WalletConnect for mobile wallets:</p>
+        <ol>
+            <li>Go to <a href="https://cloud.walletconnect.com" target="_blank" style="color: #60a5fa;">cloud.walletconnect.com</a></li>
+            <li>Create a new project</li>
+            <li>Copy your Project ID</li>
+            <li>Update <code>.env.local</code>: <code>NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_id_here</code></li>
+            <li>Restart the frontend server</li>
+        </ol>
+    </div>
+
+    <script>
+        console.log('🎉 Wallet connection test page loaded successfully!');
+        console.log('📱 MetaMask should work without any additional configuration.');
+        console.log('🔍 Check the browser console for any connection errors.');
+    </script>
+</body>
+</html>

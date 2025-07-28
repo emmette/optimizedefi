@@ -19,8 +19,12 @@ export function useSiwe() {
     try {
       setError(null)
       
-      // Get nonce from server
-      const nonceResponse = await fetch('/api/auth/nonce')
+      // Get nonce from backend
+      const nonceResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/nonce`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address })
+      })
       const { nonce } = await nonceResponse.json()
       
       if (!nonce) {

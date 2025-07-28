@@ -70,7 +70,10 @@ export const useAuthStore = create<AuthState>()(
       checkSession: async () => {
         try {
           set({ isLoading: true })
-          const response = await fetch('/api/auth/me')
+          const accessToken = get().accessToken
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/me`, {
+            headers: accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}
+          })
           const data = await response.json()
           
           if (data.authenticated) {
@@ -96,24 +99,37 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ isLoading: true })
           
-          const response = await fetch('/api/auth/login', {
+          // Extract address from SIWE message
+          const addressMatch = message.match(/0x[a-fA-F0-9]{40}/)
+          const address = addressMatch ? addressMatch[0] : null
+          
+          if (!address) {
+            throw new Error('Invalid SIWE message: no address found')
+          }
+          
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message, signature })
+            body: JSON.stringify({ message, signature, address })
           })
           
           const data = await response.json()
           
-          if (response.ok && data.success) {
-            // Store the access token if provided
-            if (data.access_token) {
-              set({ accessToken: data.access_token })
-            }
-            // Fetch session data after successful login
-            await get().checkSession()
+          if (response.ok && data.access_token) {
+            // Store the access token
+            set({ accessToken: data.access_token })
+            
+            // Set authenticated state with the address
+            get().setAuth({
+              address: address as Address,
+              chainId: 1, // Default to mainnet, will be updated on next check
+              issuedAt: new Date().toISOString(),
+              accessToken: data.access_token
+            })
+            
             return true
           } else {
-            console.error('Login failed:', data.error)
+            console.error('Login failed:', data.error || data.detail)
             return false
           }
         } catch (error) {
@@ -129,8 +145,10 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ isLoading: true })
           
-          await fetch('/api/auth/logout', {
-            method: 'POST'
+          const accessToken = get().accessToken
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/logout`, {
+            method: 'POST',
+            headers: accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}
           })
           
           get().clearAuth()

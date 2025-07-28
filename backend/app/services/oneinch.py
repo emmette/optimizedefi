@@ -100,8 +100,9 @@ class OneInchService:
         Returns:
             Dictionary of token balances
         """
-        endpoint = f"/portfolio/api/v4/general/balances/{chain_id}"
-        params = {"wallet_address": wallet_address}
+        # Updated to use the Balance API v2 endpoint
+        endpoint = f"/balance/v2/{chain_id}/balances/{wallet_address}"
+        params = {}
         
         try:
             result = await self._make_request("GET", endpoint, params=params)
@@ -128,9 +129,10 @@ class OneInchService:
         if not token_addresses:
             return {}
         
-        endpoint = f"/price/v1.1/{chain_id}"
+        # Updated to use the Spot Price API endpoint
+        endpoint = f"/price/v3/{chain_id}"
         params = {
-            "addresses": ",".join(token_addresses),
+            "tokens": ",".join(token_addresses),
             "currency": "USD"
         }
         
@@ -154,11 +156,12 @@ class OneInchService:
         Returns:
             Dictionary of token information
         """
-        endpoint = f"/swap/v6.0/{chain_id}/tokens"
+        # Updated to use the Token API v3 endpoint
+        endpoint = f"/token/v1.2/{chain_id}"
         
         try:
             result = await self._make_request("GET", endpoint)
-            return result.get("tokens", {})
+            return result
         except Exception as e:
             print(f"Error fetching token info for chain {chain_id}: {e}")
             return {}
@@ -225,22 +228,45 @@ class OneInchService:
                 "total_value_usd": 0
             }
             
-            for token_address, balance_data in balances.items():
+            # Handle different API response formats
+            balance_items = balances if isinstance(balances, list) else balances.items()
+            
+            for item in balance_items:
+                if isinstance(item, dict):
+                    # New API format: response is a list of token objects
+                    token_address = item.get("tokenAddress", item.get("token_address", ""))
+                    balance = float(item.get("balance", 0))
+                    token_info = item  # Info is included in balance response
+                else:
+                    # Old API format: response is a dict
+                    token_address, balance_data = item
+                    balance = float(balance_data.get("balance", 0))
+                    token_info = tokens_info.get(token_address, {})
+                
                 # Skip if balance is too small
-                balance = float(balance_data.get("balance", 0))
                 if balance <= 0:
                     continue
                 
-                # Get token info
-                token_info = tokens_info.get(token_address, {})
-                decimals = token_info.get("decimals", 18)
+                # Get token metadata
+                decimals = int(token_info.get("decimals", 18))
+                symbol = token_info.get("symbol", "UNKNOWN")
+                name = token_info.get("name", symbol)
                 
                 # Calculate human-readable balance
                 human_balance = balance / (10 ** decimals)
                 
-                # Get price
-                price_data = prices.get(token_address, {})
-                price_usd = float(price_data.get("price", 0))
+                # Get price - handle both old and new formats
+                price_usd = 0.0
+                if prices:
+                    if isinstance(prices, dict):
+                        price_data = prices.get(token_address, {})
+                        price_usd = float(price_data.get("price", price_data.get("usd", 0)))
+                    elif isinstance(prices, list):
+                        # Find price in list format
+                        for price_item in prices:
+                            if price_item.get("tokenAddress") == token_address:
+                                price_usd = float(price_item.get("price", price_item.get("usd", 0)))
+                                break
                 
                 # Calculate value
                 value_usd = human_balance * price_usd
@@ -251,14 +277,14 @@ class OneInchService:
                 
                 token_data = {
                     "address": token_address,
-                    "symbol": token_info.get("symbol", "UNKNOWN"),
-                    "name": token_info.get("name", "Unknown Token"),
+                    "symbol": symbol,
+                    "name": name,
                     "decimals": decimals,
                     "balance": str(balance),
                     "balance_human": human_balance,
                     "price_usd": price_usd,
                     "value_usd": value_usd,
-                    "logo_url": token_info.get("logoURI", "")
+                    "logo_url": token_info.get("logoURI", token_info.get("logo_uri", ""))
                 }
                 
                 chain_data["tokens"].append(token_data)

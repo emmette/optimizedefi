@@ -10,28 +10,15 @@ import { usePortfolio } from '@/hooks/usePortfolio'
 import { useAccount } from 'wagmi'
 import { CardSkeleton, ChartSkeleton } from '@/components/ui/LoadingSkeleton'
 
-// Mock data for development
-const mockPortfolioData = {
-  totalValue: 125432.56,
-  change24h: 2.34,
-  changeValue24h: 2876.43,
-  risk: 'Medium',
-  diversification: 'Good',
-  chains: [
-    { name: 'Ethereum', value: 45000, percentage: 35.9 },
-    { name: 'Polygon', value: 32000, percentage: 25.5 },
-    { name: 'Optimism', value: 28432.56, percentage: 22.7 },
-    { name: 'Arbitrum', value: 20000, percentage: 15.9 },
-  ],
-  performance: [
-    { date: '2024-01-01', value: 100000 },
-    { date: '2024-01-07', value: 105000 },
-    { date: '2024-01-14', value: 110000 },
-    { date: '2024-01-21', value: 115000 },
-    { date: '2024-01-28', value: 120000 },
-    { date: '2024-02-04', value: 125432.56 },
-  ]
-}
+// TODO: Replace with real performance data from portfolio history endpoint
+const mockPerformanceData = [
+  { date: '2024-01-01', value: 100000 },
+  { date: '2024-01-07', value: 105000 },
+  { date: '2024-01-14', value: 110000 },
+  { date: '2024-01-21', value: 115000 },
+  { date: '2024-01-28', value: 120000 },
+  { date: '2024-02-04', value: 125432.56 },
+]
 
 // Mock recent activity data
 const mockRecentActivity = [
@@ -102,11 +89,11 @@ export default function OverviewPage() {
   // Check if on testnet
   const isTestnet = chain?.id === 11155111 || chain?.testnet === true
   
-  // Use portfolio data if available, otherwise fall back to mock data
-  const portfolioData = portfolio ? {
+  // Use portfolio data if available, otherwise show zero state
+  const portfolioData = portfolio && portfolio.total_value_usd > 0 ? {
     totalValue: portfolio.total_value_usd,
-    change24h: 2.34, // TODO: Calculate from historical data
-    changeValue24h: portfolio.total_value_usd * 0.0234, // TODO: Calculate from historical data
+    change24h: portfolio.performance?.change_24h || 0,
+    changeValue24h: (portfolio.total_value_usd * (portfolio.performance?.change_24h || 0)) / 100,
     risk: getRiskLevel(portfolio.risk_assessment),
     diversification: getDiversificationLevel(portfolio.diversification_score),
     chains: portfolio.chains.map(chain => ({
@@ -114,8 +101,16 @@ export default function OverviewPage() {
       value: chain.total_value_usd,
       percentage: (chain.total_value_usd / portfolio.total_value_usd) * 100
     })),
-    performance: mockPortfolioData.performance // TODO: Fetch from history endpoint
-  } : mockPortfolioData
+    performance: mockPerformanceData // TODO: Fetch from history endpoint
+  } : {
+    totalValue: 0,
+    change24h: 0,
+    changeValue24h: 0,
+    risk: 'Unknown',
+    diversification: 'N/A',
+    chains: [],
+    performance: []
+  }
   
   // Helper functions to convert metrics to display strings
   function getRiskLevel(riskAssessment: any): string {
@@ -183,6 +178,24 @@ export default function OverviewPage() {
       </div>
     )
   }
+  
+  // Show empty state if no portfolio value
+  if (portfolio && portfolio.total_value_usd === 0) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Card className="max-w-md p-8 text-center space-y-4">
+          <div className="text-4xl mb-2">💰</div>
+          <h2 className="text-2xl font-semibold">No Assets Found</h2>
+          <p className="text-muted-foreground">
+            We couldn't find any assets in your wallet on the supported chains.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Make sure you have tokens on Ethereum, Polygon, Optimism, Arbitrum, Base, Polygon zkEVM, World Chain, or Zora.
+          </p>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-full">
@@ -245,7 +258,9 @@ export default function OverviewPage() {
             <div>
               <p className="text-sm text-muted-foreground">Diversification</p>
               <p className="text-2xl font-bold mt-1">{portfolioData.diversification}</p>
-              <p className="text-sm text-muted-foreground mt-2">4 chains active</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                {portfolio ? `${portfolio.chains.length} chain${portfolio.chains.length !== 1 ? 's' : ''} active` : 'No assets'}
+              </p>
             </div>
             <div className="p-3 bg-blue-500/10 rounded-lg">
               <Activity className="h-6 w-6 text-blue-500" />
@@ -257,7 +272,7 @@ export default function OverviewPage() {
       {/* First Row: Portfolio Performance and Top Opportunities */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <div className="lg:col-span-3">
-          <D3PerformanceChart data={mockPortfolioData.performance.map(d => ({ 
+          <D3PerformanceChart data={portfolioData.performance.map(d => ({ 
             date: new Date(d.date), 
             value: d.value 
           }))} />

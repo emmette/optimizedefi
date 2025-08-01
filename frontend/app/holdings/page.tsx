@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Card } from '@/components/ui/card'
-import { Search, TrendingUp, TrendingDown } from 'lucide-react'
+import { Search, TrendingUp, TrendingDown, RefreshCw, AlertCircle } from 'lucide-react'
 import { usePortfolio } from '@/hooks/usePortfolio'
 import { useAccount } from 'wagmi'
 import { HoldingsPageSkeleton } from '@/components/ui/HoldingsSkeleton'
@@ -112,13 +112,13 @@ export default function HoldingsPage() {
   const [sortBy, setSortBy] = useState<'value' | 'change' | 'allocation'>('value')
   const [filterChain, setFilterChain] = useState<string>('all')
   const { isConnected, chain } = useAccount()
-  const { data: portfolio, isLoading } = usePortfolio()
+  const { data: portfolio, isLoading, error, refetch, isRefetching } = usePortfolio()
   
   // Check if on testnet
   const isTestnet = chain?.id === 11155111 || chain?.testnet === true
 
   // Transform portfolio data to holdings format
-  const holdings = portfolio ? portfolio.chains.flatMap(chain => 
+  const holdings = portfolio && portfolio.chains.length > 0 ? portfolio.chains.flatMap(chain => 
     chain.tokens.map(token => ({
       id: `${chain.chain_id}-${token.address}`,
       token: token.symbol,
@@ -133,7 +133,7 @@ export default function HoldingsPage() {
       address: token.address,
       logo_url: token.logo_url
     }))
-  ) : mockHoldings
+  ) : []
 
   // Filter and sort holdings
   const filteredHoldings = holdings
@@ -156,15 +156,15 @@ export default function HoldingsPage() {
       }
     })
 
-  const totalValue = portfolio?.total_value_usd || mockHoldings.reduce((sum, holding) => sum + holding.value, 0)
+  const totalValue = portfolio?.total_value_usd || 0
   
   // Calculate chain summary from real data
-  const chainSummary = portfolio ? portfolio.chains.map(chain => ({
+  const chainSummary = portfolio && portfolio.chains.length > 0 ? portfolio.chains.map(chain => ({
     chain: chain.chain_name,
     value: chain.total_value_usd,
-    percentage: (chain.total_value_usd / portfolio.total_value_usd) * 100,
+    percentage: portfolio.total_value_usd > 0 ? (chain.total_value_usd / portfolio.total_value_usd) * 100 : 0,
     tokens: chain.tokens.length
-  })) : mockChainSummary
+  })) : []
 
   if (!isConnected) {
     return (
@@ -198,12 +198,44 @@ export default function HoldingsPage() {
     return <HoldingsPageSkeleton />
   }
 
+  if (error) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Card className="max-w-md p-8 text-center space-y-4">
+          <AlertCircle className="h-12 w-12 text-destructive mx-auto" />
+          <h2 className="text-xl font-semibold">Failed to Load Portfolio</h2>
+          <p className="text-muted-foreground">
+            There was an error loading your portfolio data. This might be due to network issues or API limitations.
+          </p>
+          <button 
+            onClick={() => refetch()}
+            disabled={isRefetching}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefetching ? 'animate-spin' : ''}`} />
+            {isRefetching ? 'Refreshing...' : 'Try Again'}
+          </button>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="px-8 py-6 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">Holdings</h1>
-        <p className="text-muted-foreground mt-1">Manage and track your digital assets across all chains</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Holdings</h1>
+          <p className="text-muted-foreground mt-1">Manage and track your digital assets across all chains</p>
+        </div>
+        <button
+          onClick={() => refetch()}
+          disabled={isRefetching}
+          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={`h-4 w-4 ${isRefetching ? 'animate-spin' : ''}`} />
+          {isRefetching ? 'Refreshing' : 'Refresh'}
+        </button>
       </div>
 
       {/* Chain Summary Cards */}
@@ -275,22 +307,44 @@ export default function HoldingsPage() {
 
       {/* Holdings Table */}
       <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-background border-b border-border">
-              <tr>
-                <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Asset</th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Chain</th>
-                <th className="text-right px-6 py-4 text-sm font-medium text-muted-foreground">Balance</th>
-                <th className="text-right px-6 py-4 text-sm font-medium text-muted-foreground">Price</th>
-                <th className="text-right px-6 py-4 text-sm font-medium text-muted-foreground">Value</th>
-                <th className="text-right px-6 py-4 text-sm font-medium text-muted-foreground">24h Change</th>
-                <th className="text-right px-6 py-4 text-sm font-medium text-muted-foreground">Allocation</th>
-                <th className="text-center px-6 py-4 text-sm font-medium text-muted-foreground">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredHoldings.map((holding) => (
+        {filteredHoldings.length === 0 ? (
+          <div className="p-12 text-center">
+            <div className="mb-4">
+              <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">No Holdings Found</h3>
+            <p className="text-muted-foreground mb-4">
+              {holdings.length === 0 
+                ? "You don't have any tokens in your portfolio yet."
+                : "No tokens match your current filters."}
+            </p>
+            {holdings.length === 0 && (
+              <button
+                onClick={() => refetch()}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Refresh Portfolio
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-background border-b border-border">
+                <tr>
+                  <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Asset</th>
+                  <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Chain</th>
+                  <th className="text-right px-6 py-4 text-sm font-medium text-muted-foreground">Balance</th>
+                  <th className="text-right px-6 py-4 text-sm font-medium text-muted-foreground">Price</th>
+                  <th className="text-right px-6 py-4 text-sm font-medium text-muted-foreground">Value</th>
+                  <th className="text-right px-6 py-4 text-sm font-medium text-muted-foreground">24h Change</th>
+                  <th className="text-right px-6 py-4 text-sm font-medium text-muted-foreground">Allocation</th>
+                  <th className="text-center px-6 py-4 text-sm font-medium text-muted-foreground">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredHoldings.map((holding) => (
                 <tr key={holding.id} className="border-b border-border hover:bg-accent/50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -353,6 +407,7 @@ export default function HoldingsPage() {
             </tbody>
           </table>
         </div>
+        )}
       </Card>
 
       {/* Summary */}

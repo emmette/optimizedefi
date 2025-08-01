@@ -185,16 +185,19 @@ class OneInchService:
         endpoint = f"/balance/v2/{chain_id}/balances/{wallet_address}"
         params = {}
         
-        print(f"Fetching balances for {wallet_address} on chain {chain_id}")
-        print(f"API Key present: {bool(self.api_key)}")
-        print(f"Full URL: {self.base_url}{endpoint}")
+        logger.info(f"Fetching balances for {wallet_address} on chain {chain_id}")
+        logger.debug(f"API Key present: {bool(self.api_key)}")
+        logger.debug(f"Endpoint: {endpoint}")
         
         try:
             result = await self._make_request("GET", endpoint, params=params)
-            print(f"Balance result for chain {chain_id}: {result}")
+            logger.debug(f"Balance result for chain {chain_id}: {len(result) if isinstance(result, (list, dict)) else result}")
             return result
+        except OneInchAPIError as e:
+            logger.error(f"API error fetching balances for chain {chain_id}: {e}")
+            return {}
         except Exception as e:
-            print(f"Error fetching balances for chain {chain_id}: {e}")
+            logger.error(f"Unexpected error fetching balances for chain {chain_id}: {e}", exc_info=True)
             return {}
     
     async def get_token_prices(
@@ -224,9 +227,13 @@ class OneInchService:
         
         try:
             result = await self._make_request("GET", endpoint, params=params)
+            logger.debug(f"Price result for chain {chain_id}: {len(result) if isinstance(result, (list, dict)) else result} items")
             return result
+        except OneInchAPIError as e:
+            logger.error(f"API error fetching prices for chain {chain_id}: {e}")
+            return {}
         except Exception as e:
-            print(f"Error fetching prices for chain {chain_id}: {e}")
+            logger.error(f"Unexpected error fetching prices for chain {chain_id}: {e}", exc_info=True)
             return {}
     
     async def get_tokens_info(
@@ -247,9 +254,13 @@ class OneInchService:
         
         try:
             result = await self._make_request("GET", endpoint)
+            logger.debug(f"Token info result for chain {chain_id}: {len(result) if isinstance(result, (list, dict)) else result} tokens")
             return result
+        except OneInchAPIError as e:
+            logger.error(f"API error fetching token info for chain {chain_id}: {e}")
+            return {}
         except Exception as e:
-            print(f"Error fetching token info for chain {chain_id}: {e}")
+            logger.error(f"Unexpected error fetching token info for chain {chain_id}: {e}", exc_info=True)
             return {}
     
     async def get_multi_chain_portfolio(
@@ -267,6 +278,10 @@ class OneInchService:
         Returns:
             Aggregated portfolio data
         """
+        # Validate wallet address
+        if not wallet_address or not wallet_address.startswith('0x') or len(wallet_address) != 42:
+            raise OneInchAPIError(f"Invalid wallet address: {wallet_address}")
+        
         if chain_ids is None:
             chain_ids = list(self.chain_configs.keys())
         
@@ -276,7 +291,7 @@ class OneInchService:
         
         # Log if testnet chains were requested
         if testnet_chain_ids:
-            print(f"Warning: Testnet chains requested but not supported by 1inch: {testnet_chain_ids}")
+            logger.warning(f"Testnet chains requested but not supported by 1inch: {testnet_chain_ids}")
         
         # Only proceed with supported chains
         chain_ids = supported_chain_ids
@@ -299,7 +314,7 @@ class OneInchService:
         
         for chain_id, balances in zip(chain_ids, balance_results):
             if isinstance(balances, Exception):
-                print(f"Error for chain {chain_id}: {balances}")
+                logger.error(f"Error fetching balances for chain {chain_id}: {balances}")
                 continue
             
             if not balances:
@@ -421,9 +436,14 @@ class OneInchService:
         }
         
         try:
+            logger.info(f"Getting quote for {from_token} -> {to_token} on chain {chain_id}")
             result = await self._make_request("GET", endpoint, params=params)
+            logger.debug(f"Quote received: {result.get('toAmount', 'N/A')} {to_token}")
             return result
+        except OneInchAPIError:
+            raise
         except Exception as e:
+            logger.error(f"Unexpected error getting quote: {str(e)}", exc_info=True)
             raise OneInchAPIError(f"Failed to get quote: {str(e)}")
     
     async def build_swap_tx(
@@ -460,9 +480,14 @@ class OneInchService:
         }
         
         try:
+            logger.info(f"Building swap transaction for {from_token} -> {to_token} on chain {chain_id}")
             result = await self._make_request("GET", endpoint, params=params)
+            logger.debug(f"Swap transaction built successfully")
             return result
+        except OneInchAPIError:
+            raise
         except Exception as e:
+            logger.error(f"Unexpected error building swap transaction: {str(e)}", exc_info=True)
             raise OneInchAPIError(f"Failed to build swap transaction: {str(e)}")
 
 

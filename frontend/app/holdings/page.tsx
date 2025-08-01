@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card'
 import { Search, TrendingUp, TrendingDown } from 'lucide-react'
 import { usePortfolio } from '@/hooks/usePortfolio'
 import { useAccount } from 'wagmi'
-import { CardSkeleton } from '@/components/ui/LoadingSkeleton'
+import { HoldingsPageSkeleton } from '@/components/ui/HoldingsSkeleton'
 
 // Mock holdings data
 const mockHoldings = [
@@ -195,19 +195,7 @@ export default function HoldingsPage() {
   }
 
   if (isLoading) {
-    return (
-      <div className="px-8 py-6 space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Holdings</h1>
-          <p className="text-muted-foreground mt-1">Loading your portfolio...</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <CardSkeleton key={i} />
-          ))}
-        </div>
-      </div>
-    )
+    return <HoldingsPageSkeleton />
   }
 
   return (

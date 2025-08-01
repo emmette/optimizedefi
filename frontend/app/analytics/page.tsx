@@ -10,8 +10,12 @@ import {
   PieChart,
   BarChart3,
   Calendar,
-  Download
+  Download,
+  AlertCircle
 } from 'lucide-react'
+import { usePortfolio } from '@/hooks/usePortfolio'
+import { useAccount } from 'wagmi'
+import { CardSkeleton, ChartSkeleton } from '@/components/ui/LoadingSkeleton'
 
 // Mock performance data
 const mockPerformanceData = {
@@ -93,12 +97,78 @@ type TimeRange = '1D' | '1W' | '1M' | '1Y'
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState<TimeRange>('1M')
   const [activeMetric, setActiveMetric] = useState<'portfolio' | 'transactions' | 'yield' | 'gas'>('portfolio')
+  const { isConnected, chain } = useAccount()
+  const { data: portfolio, isLoading, error } = usePortfolio()
+
+  // Check if on testnet
+  const isTestnet = chain?.id === 11155111 || chain?.testnet === true
 
   const performanceData = mockPerformanceData[timeRange]
-  const currentValue = performanceData[performanceData.length - 1].value
+  const currentValue = portfolio?.total_value_usd || performanceData[performanceData.length - 1].value
   const previousValue = performanceData[0].value
   const change = currentValue - previousValue
-  const changePercent = (change / previousValue) * 100
+  const changePercent = previousValue > 0 ? (change / previousValue) * 100 : 0
+
+  if (!isConnected) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold mb-2">Connect Your Wallet</h2>
+          <p className="text-muted-foreground">Please connect your wallet to view analytics</p>
+        </div>
+      </div>
+    )
+  }
+  
+  if (isTestnet) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Card className="max-w-md p-8 text-center space-y-4">
+          <div className="text-4xl mb-2">🧪</div>
+          <h2 className="text-2xl font-semibold">Testnet Detected</h2>
+          <p className="text-muted-foreground">
+            You're connected to {chain?.name || 'a testnet'}. Analytics are only available on mainnet networks.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Please switch to Ethereum, Polygon, Optimism, Arbitrum, Base, Polygon zkEVM, World Chain, or Zora mainnet.
+          </p>
+        </Card>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="px-8 py-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Analytics</h1>
+            <p className="text-muted-foreground mt-1">Track your portfolio performance and metrics</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <CardSkeleton key={i} />
+          ))}
+        </div>
+        <ChartSkeleton />
+      </div>
+    )
+  }
+
+  if (error || !portfolio) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Card className="max-w-md p-8 text-center space-y-4">
+          <AlertCircle className="h-12 w-12 text-destructive mx-auto" />
+          <h2 className="text-xl font-semibold">Failed to Load Analytics</h2>
+          <p className="text-muted-foreground">
+            There was an error loading your analytics data. Please try again later.
+          </p>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="px-8 py-6 space-y-6">
@@ -193,131 +263,98 @@ export default function AnalyticsPage() {
       {/* Metric Content */}
       {activeMetric === 'portfolio' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="p-6">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Best Performer</h3>
-            <p className="text-2xl font-bold">ETH</p>
-            <p className="text-sm text-green-500 mt-1">+12.5% this month</p>
-          </Card>
-          <Card className="p-6">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Worst Performer</h3>
-            <p className="text-2xl font-bold">MATIC</p>
-            <p className="text-sm text-red-500 mt-1">-3.2% this month</p>
-          </Card>
-          <Card className="p-6">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Most Volatile</h3>
-            <p className="text-2xl font-bold">OP</p>
-            <p className="text-sm text-muted-foreground mt-1">±15.3% volatility</p>
-          </Card>
-          <Card className="p-6">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Largest Position</h3>
-            <p className="text-2xl font-bold">ETH</p>
-            <p className="text-sm text-muted-foreground mt-1">35.9% of portfolio</p>
-          </Card>
-          <Card className="p-6">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Smallest Position</h3>
-            <p className="text-2xl font-bold">LINK</p>
-            <p className="text-sm text-muted-foreground mt-1">1.8% of portfolio</p>
-          </Card>
-          <Card className="p-6">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Risk Score</h3>
-            <p className="text-2xl font-bold">Medium</p>
-            <p className="text-sm text-orange-500 mt-1">Score: 6.5/10</p>
-          </Card>
+          {/* Find largest and smallest positions */}
+          {(() => {
+            const allTokens = portfolio.chains.flatMap(chain => 
+              chain.tokens.map(token => ({
+                ...token,
+                chainName: chain.chain_name,
+                allocation: (token.balance_usd / portfolio.total_value_usd) * 100
+              }))
+            ).sort((a, b) => b.balance_usd - a.balance_usd)
+            
+            const largestToken = allTokens[0]
+            const smallestToken = allTokens[allTokens.length - 1]
+            
+            return (
+              <>
+                <Card className="p-6">
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Total Tokens</h3>
+                  <p className="text-2xl font-bold">{allTokens.length}</p>
+                  <p className="text-sm text-muted-foreground mt-1">Across {portfolio.chains.length} chains</p>
+                </Card>
+                <Card className="p-6">
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Diversification Score</h3>
+                  <p className="text-2xl font-bold">{portfolio.diversification_score}%</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {portfolio.diversification_score >= 80 ? 'Excellent' :
+                     portfolio.diversification_score >= 60 ? 'Good' :
+                     portfolio.diversification_score >= 40 ? 'Fair' : 'Poor'}
+                  </p>
+                </Card>
+                <Card className="p-6">
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Risk Level</h3>
+                  <p className="text-2xl font-bold">{portfolio.risk_assessment?.level || 'Unknown'}</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Score: {portfolio.risk_assessment?.score || 0}/100
+                  </p>
+                </Card>
+                {largestToken && (
+                  <Card className="p-6">
+                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Largest Position</h3>
+                    <p className="text-2xl font-bold">{largestToken.symbol}</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {largestToken.allocation.toFixed(1)}% of portfolio
+                    </p>
+                  </Card>
+                )}
+                {smallestToken && largestToken !== smallestToken && (
+                  <Card className="p-6">
+                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Smallest Position</h3>
+                    <p className="text-2xl font-bold">{smallestToken.symbol}</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {smallestToken.allocation.toFixed(1)}% of portfolio
+                    </p>
+                  </Card>
+                )}
+                <Card className="p-6">
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Most Active Chain</h3>
+                  <p className="text-2xl font-bold">
+                    {portfolio.chains.reduce((max, chain) => 
+                      chain.total_value_usd > (max?.total_value_usd || 0) ? chain : max
+                    , null)?.chain_name || 'N/A'}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">By value</p>
+                </Card>
+              </>
+            )
+          })()}
         </div>
       )}
 
       {activeMetric === 'transactions' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="p-6">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Total Transactions</h3>
-            <p className="text-2xl font-bold">{mockTransactionMetrics.totalTransactions}</p>
-            <p className="text-sm text-muted-foreground mt-1">This month</p>
-          </Card>
-          <Card className="p-6">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Average Size</h3>
-            <p className="text-2xl font-bold">${mockTransactionMetrics.avgTransactionSize.toLocaleString()}</p>
-            <p className="text-sm text-muted-foreground mt-1">Per transaction</p>
-          </Card>
-          <Card className="p-6">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Gas Fees Spent</h3>
-            <p className="text-2xl font-bold">${mockTransactionMetrics.gasFeesSpent.toLocaleString()}</p>
-            <p className="text-sm text-muted-foreground mt-1">Total fees</p>
-          </Card>
-          <Card className="p-6">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Success Rate</h3>
-            <p className="text-2xl font-bold">{mockTransactionMetrics.successRate}%</p>
-            <p className="text-sm text-green-500 mt-1">Excellent</p>
-          </Card>
-          <Card className="p-6">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Most Active Chain</h3>
-            <p className="text-2xl font-bold">{mockTransactionMetrics.mostActiveChain}</p>
-            <p className="text-sm text-muted-foreground mt-1">165 transactions</p>
-          </Card>
-          <Card className="p-6">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Most Traded</h3>
-            <p className="text-2xl font-bold">{mockTransactionMetrics.mostTradedToken}</p>
-            <p className="text-sm text-muted-foreground mt-1">89 trades</p>
+          <Card className="p-6 col-span-full">
+            <div className="text-center py-8">
+              <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Transaction Analytics Coming Soon</h3>
+              <p className="text-muted-foreground">
+                Historical transaction data and analytics will be available in a future update.
+              </p>
+            </div>
           </Card>
         </div>
       )}
 
       {activeMetric === 'yield' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="p-6">
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">Total Yield Earned</h3>
-              <p className="text-2xl font-bold">${mockYieldMetrics.totalYieldEarned.toLocaleString()}</p>
-              <p className="text-sm text-green-500 mt-1">All time</p>
-            </Card>
-            <Card className="p-6">
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">Average APY</h3>
-              <p className="text-2xl font-bold">{mockYieldMetrics.avgAPY}%</p>
-              <p className="text-sm text-muted-foreground mt-1">Across positions</p>
-            </Card>
-            <Card className="p-6">
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">Active Positions</h3>
-              <p className="text-2xl font-bold">{mockYieldMetrics.activePositions}</p>
-              <p className="text-sm text-muted-foreground mt-1">Earning yield</p>
-            </Card>
-            <Card className="p-6">
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">Best Performer</h3>
-              <p className="text-2xl font-bold">{mockYieldMetrics.bestPerformer.protocol}</p>
-              <p className="text-sm text-green-500 mt-1">{mockYieldMetrics.bestPerformer.apy}% APY</p>
-            </Card>
-          </div>
           <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Top Yield Sources</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-background rounded-lg">
-                <div>
-                  <p className="font-medium">Aave V3 - ETH</p>
-                  <p className="text-sm text-muted-foreground">Ethereum</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium text-green-500">18.5% APY</p>
-                  <p className="text-sm text-muted-foreground">+$3,200.50</p>
-                </div>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-background rounded-lg">
-                <div>
-                  <p className="font-medium">Compound - USDC</p>
-                  <p className="text-sm text-muted-foreground">Polygon</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium text-green-500">12.3% APY</p>
-                  <p className="text-sm text-muted-foreground">+$2,100.35</p>
-                </div>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-background rounded-lg">
-                <div>
-                  <p className="font-medium">Yearn - DAI</p>
-                  <p className="text-sm text-muted-foreground">Optimism</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium text-green-500">9.8% APY</p>
-                  <p className="text-sm text-muted-foreground">+$1,542.86</p>
-                </div>
-              </div>
+            <div className="text-center py-8">
+              <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Yield Analytics Coming Soon</h3>
+              <p className="text-muted-foreground">
+                Yield tracking and optimization analytics will be available in a future update.
+              </p>
             </div>
           </Card>
         </div>
@@ -325,59 +362,13 @@ export default function AnalyticsPage() {
 
       {activeMetric === 'gas' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="p-6">
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">Total Saved</h3>
-              <p className="text-2xl font-bold">${mockGasMetrics.totalSaved.toLocaleString()}</p>
-              <p className="text-sm text-green-500 mt-1">This month</p>
-            </Card>
-            <Card className="p-6">
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">Optimized Txns</h3>
-              <p className="text-2xl font-bold">{mockGasMetrics.optimizedTransactions}</p>
-              <p className="text-sm text-muted-foreground mt-1">Transactions</p>
-            </Card>
-            <Card className="p-6">
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">Avg Savings</h3>
-              <p className="text-2xl font-bold">${mockGasMetrics.avgSavings.toFixed(2)}</p>
-              <p className="text-sm text-muted-foreground mt-1">Per transaction</p>
-            </Card>
-            <Card className="p-6">
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">Best Saving</h3>
-              <p className="text-2xl font-bold">${mockGasMetrics.bestSaving.amount.toFixed(2)}</p>
-              <p className="text-sm text-muted-foreground mt-1">{mockGasMetrics.bestSaving.type}</p>
-            </Card>
-          </div>
           <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Optimization Breakdown</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Batch Transactions</span>
-                </div>
-                <span className="font-medium">$234.50 saved</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span>Optimal Routing</span>
-                </div>
-                <span className="font-medium">$189.32 saved</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  <span>Gas Price Timing</span>
-                </div>
-                <span className="font-medium">$89.21 saved</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                  <span>Contract Optimization</span>
-                </div>
-                <span className="font-medium">$30.18 saved</span>
-              </div>
+            <div className="text-center py-8">
+              <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Gas Analytics Coming Soon</h3>
+              <p className="text-muted-foreground">
+                Gas optimization tracking and analytics will be available in a future update.
+              </p>
             </div>
           </Card>
         </div>

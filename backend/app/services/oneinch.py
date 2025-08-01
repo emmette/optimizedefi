@@ -1,12 +1,16 @@
 """1inch API integration service."""
 
 import asyncio
-from typing import Dict, List, Optional, Any
+import time
+from typing import Dict, List, Optional, Any, Callable
 from datetime import datetime
 import aiohttp
 from decimal import Decimal
+import logging
 
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class OneInchAPIError(Exception):
@@ -14,13 +18,68 @@ class OneInchAPIError(Exception):
     pass
 
 
+class RateLimitError(OneInchAPIError):
+    """Exception for rate limit errors."""
+    pass
+
+
+async def retry_with_backoff(
+    func: Callable,
+    max_retries: int = 3,
+    initial_delay: float = 1.0,
+    backoff_factor: float = 2.0,
+    max_delay: float = 30.0
+):
+    """
+    Retry a function with exponential backoff.
+    
+    Args:
+        func: Async function to retry
+        max_retries: Maximum number of retry attempts
+        initial_delay: Initial delay between retries in seconds
+        backoff_factor: Factor to multiply delay by after each retry
+        max_delay: Maximum delay between retries
+        
+    Returns:
+        Result from the function
+        
+    Raises:
+        Exception from the last retry attempt
+    """
+    delay = initial_delay
+    last_exception = None
+    
+    for attempt in range(max_retries + 1):
+        try:
+            return await func()
+        except aiohttp.ClientError as e:
+            last_exception = e
+            if attempt < max_retries:
+                logger.warning(
+                    f"Request failed (attempt {attempt + 1}/{max_retries + 1}): {str(e)}. "
+                    f"Retrying in {delay:.1f}s..."
+                )
+                await asyncio.sleep(delay)
+                delay = min(delay * backoff_factor, max_delay)
+            else:
+                logger.error(f"Request failed after {max_retries + 1} attempts: {str(e)}")
+        except Exception as e:
+            # Don't retry on non-network errors
+            logger.error(f"Non-retryable error: {str(e)}")
+            raise
+    
+    raise last_exception
+
+
 class OneInchService:
     """Service for interacting with 1inch APIs."""
     
-    def __init__(self):
+    def __init__(self, max_retries: int = 3, initial_delay: float = 1.0):
         self.base_url = "https://api.1inch.dev"
         self.api_key = settings.ONEINCH_API_KEY
         self.session: Optional[aiohttp.ClientSession] = None
+        self.max_retries = max_retries
+        self.initial_delay = initial_delay
         
         # Chain configurations - only mainnet chains supported by 1inch
         self.chain_configs = {
@@ -61,15 +120,16 @@ class OneInchService:
         method: str,
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
-        data: Optional[Dict[str, Any]] = None
+        data: Optional[Dict[str, Any]] = None,
+        retry: bool = True
     ) -> Dict[str, Any]:
-        """Make an API request to 1inch."""
+        """Make an API request to 1inch with retry logic."""
         if not self.session:
             raise OneInchAPIError("Session not initialized. Use async context manager.")
         
         url = f"{self.base_url}{endpoint}"
         
-        try:
+        async def _request():
             async with self.session.request(
                 method=method,
                 url=url,
@@ -77,16 +137,34 @@ class OneInchService:
                 params=params,
                 json=data
             ) as response:
+                if response.status == 429:
+                    # Rate limited
+                    retry_after = response.headers.get('Retry-After', '60')
+                    logger.warning(f"Rate limited. Retry after: {retry_after}s")
+                    raise RateLimitError(f"Rate limited. Retry after: {retry_after}s")
+                
                 if response.status != 200:
                     error_text = await response.text()
-                    raise OneInchAPIError(
-                        f"API request failed: {response.status} - {error_text}"
-                    )
+                    error_msg = f"API request failed: {response.status} - {error_text}"
+                    logger.error(f"{method} {endpoint}: {error_msg}")
+                    
+                    # Don't retry on client errors (4xx) except rate limiting
+                    if 400 <= response.status < 500:
+                        raise OneInchAPIError(error_msg)
+                    
+                    # Server errors (5xx) should be retried
+                    raise aiohttp.ClientError(error_msg)
                 
                 return await response.json()
-                
-        except aiohttp.ClientError as e:
-            raise OneInchAPIError(f"Network error: {str(e)}")
+        
+        if retry:
+            try:
+                return await retry_with_backoff(_request)
+            except RateLimitError:
+                # Don't retry rate limit errors
+                raise
+        else:
+            return await _request()
     
     async def get_wallet_balances(
         self,

@@ -9,6 +9,7 @@ from decimal import Decimal
 import logging
 
 from app.core.config import settings
+from app.services.price_cache import price_cache_middleware
 
 logger = logging.getLogger(__name__)
 
@@ -246,10 +247,39 @@ class OneInchService:
     async def get_token_prices(
         self,
         chain_id: int,
+        token_addresses: List[str],
+        use_cache: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Get current prices for tokens with batch support and caching.
+        
+        Args:
+            chain_id: Chain ID
+            token_addresses: List of token contract addresses
+            use_cache: Whether to use price cache (default: True)
+            
+        Returns:
+            Dictionary of token prices
+        """
+        if not token_addresses:
+            return {}
+        
+        # Use cache middleware if enabled
+        if use_cache:
+            return await price_cache_middleware.get_token_prices_with_cache(
+                self, chain_id, token_addresses
+            )
+        
+        # Direct API call without cache
+        return await self._get_token_prices_direct(chain_id, token_addresses)
+    
+    async def _get_token_prices_direct(
+        self,
+        chain_id: int,
         token_addresses: List[str]
     ) -> Dict[str, Any]:
         """
-        Get current prices for tokens with batch support.
+        Get token prices directly from API without cache.
         
         Args:
             chain_id: Chain ID
@@ -258,9 +288,6 @@ class OneInchService:
         Returns:
             Dictionary of token prices
         """
-        if not token_addresses:
-            return {}
-        
         # Normalize addresses to lowercase
         token_addresses = [addr.lower() for addr in token_addresses]
         

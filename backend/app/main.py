@@ -1,19 +1,32 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+import asyncio
 import uvicorn
 
 from app.api import health, portfolio, auth, chat, mcp, metrics
 from app.core.config import settings
 from app.core.middleware import AuthMiddleware, RateLimitMiddleware
+from app.services.price_cache import cleanup_expired_entries
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
     print(f"Starting OptimizeDeFi API on {settings.HOST}:{settings.PORT}")
+    
+    # Start background task for cache cleanup
+    cleanup_task = asyncio.create_task(cleanup_expired_entries(interval=300))
+    print("Started price cache cleanup task")
+    
     yield
+    
     # Shutdown
     print("Shutting down OptimizeDeFi API")
+    cleanup_task.cancel()
+    try:
+        await cleanup_task
+    except asyncio.CancelledError:
+        pass
 
 app = FastAPI(
     title="OptimizeDeFi API",

@@ -11,6 +11,7 @@ from app.services.cost_calculator import cost_calculator
 from app.services.rate_limit_manager import rate_limit_manager
 from app.services.memory_manager import memory_manager
 from app.agents.config import agent_config_manager
+from app.services.price_cache import price_cache
 
 router = APIRouter(prefix="/metrics", tags=["metrics"])
 
@@ -31,12 +32,16 @@ async def get_metrics_summary(
     # Get model info
     model_usage = agent_config_manager.get_model_usage()
     
+    # Get price cache stats
+    cache_stats = price_cache.get_stats()
+    
     # Compile summary
     summary = {
         "timestamp": datetime.utcnow().isoformat(),
         "ai_metrics": ai_metrics,
         "rate_limits": rate_limits,
         "model_usage": model_usage,
+        "price_cache": cache_stats,
         "admin_user": current_user.address
     }
     
@@ -256,3 +261,42 @@ async def get_performance_metrics(
         }
     
     return performance
+
+
+@router.get("/cache/prices")
+async def get_price_cache_metrics(
+    current_user: TokenData = Depends(require_admin)
+) -> Dict[str, Any]:
+    """Get price cache statistics and performance metrics."""
+    stats = price_cache.get_stats()
+    
+    return {
+        "timestamp": datetime.utcnow().isoformat(),
+        "cache_stats": stats,
+        "cache_config": {
+            "default_ttl_seconds": price_cache.default_ttl,
+            "cleanup_interval_seconds": 300
+        }
+    }
+
+
+@router.post("/cache/prices/clear")
+async def clear_price_cache(
+    current_user: TokenData = Depends(require_admin),
+    confirm: bool = False
+) -> Dict[str, Any]:
+    """Clear all price cache entries (admin only, requires confirmation)."""
+    if not confirm:
+        raise HTTPException(
+            status_code=400,
+            detail="Confirmation required. Set confirm=true to clear cache."
+        )
+    
+    await price_cache.clear()
+    
+    return {
+        "status": "success",
+        "message": "Price cache cleared",
+        "timestamp": datetime.utcnow().isoformat(),
+        "cleared_by": current_user.address
+    }

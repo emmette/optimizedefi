@@ -3,6 +3,7 @@
 from typing import Optional
 from fastapi import Request, HTTPException
 from fastapi.security.utils import get_authorization_scheme_param
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.auth import verify_token, rate_limiter
@@ -49,9 +50,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
             else:
                 # Invalid token
                 if request.url.path.startswith("/api/"):
-                    raise HTTPException(
+                    return JSONResponse(
                         status_code=401,
-                        detail="Invalid authentication credentials"
+                        content={"detail": "Invalid authentication credentials"}
                     )
         
         # For API routes, require authentication unless excluded or read-only
@@ -63,9 +64,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if (request.url.path.startswith("/api/") and 
             not hasattr(request.state, "user") and
             not is_portfolio_get):
-            raise HTTPException(
+            return JSONResponse(
                 status_code=401,
-                detail="Authentication required"
+                content={"detail": "Authentication required"}
             )
         
         response = await call_next(request)
@@ -102,9 +103,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             # Check rate limit
             if not rate_limiter.check_rate_limit(identifier):
                 remaining = rate_limiter.get_remaining_requests(identifier)
-                raise HTTPException(
+                return JSONResponse(
                     status_code=429,
-                    detail=f"Rate limit exceeded. {remaining} requests remaining.",
+                    content={"detail": f"Rate limit exceeded. {remaining} requests remaining."},
                     headers={
                         "X-RateLimit-Limit": str(rate_limiter.max_requests),
                         "X-RateLimit-Remaining": str(remaining),

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useAccount } from 'wagmi'
-import { fetchPortfolio, fetchPortfolioHistory, PortfolioResponse } from '@/lib/api/portfolio'
+import { fetchPortfolio, fetchPortfolioHistory, PortfolioResponse, Token } from '@/lib/api/portfolio'
 
 export function usePortfolio(chains?: number[]) {
   const { address } = useAccount()
@@ -74,15 +74,24 @@ export function usePortfolioStats(chains?: number[]) {
     }
   }
   
+  // Flatten tokens from all chains
+  const allTokens = portfolio.chains.flatMap(chain => 
+    chain.tokens.map(token => ({
+      ...token,
+      chain_id: chain.chain_id,
+      chain_name: chain.chain_name
+    }))
+  )
+  
   // Calculate statistics from portfolio data
   const totalValue = portfolio.total_value_usd
-  const tokenCount = portfolio.tokens.length
-  const chainCount = new Set(portfolio.tokens.map(t => t.chain_id)).size
+  const tokenCount = allTokens.length
+  const chainCount = portfolio.chains.length
   
   // Find largest holding
-  const largestHolding = portfolio.tokens.reduce((largest, token) => 
+  const largestHolding = allTokens.reduce((largest, token) => 
     token.balance_usd > (largest?.balance_usd || 0) ? token : largest,
-    portfolio.tokens[0]
+    allTokens[0]
   )
   
   return {
@@ -92,16 +101,23 @@ export function usePortfolioStats(chains?: number[]) {
       tokenCount,
       chainCount,
       largestHolding,
-      diversificationScore: calculateDiversificationScore(portfolio.tokens),
-      risk: assessRisk(portfolio.tokens)
+      diversificationScore: calculateDiversificationScore(allTokens),
+      risk: assessRisk(allTokens)
     }
   }
 }
 
-function calculateDiversificationScore(tokens: any[]): number {
+interface ExtendedToken extends Token {
+  chain_id: number
+  chain_name: string
+}
+
+function calculateDiversificationScore(tokens: ExtendedToken[]): number {
   if (tokens.length === 0) return 0
   
   const totalValue = tokens.reduce((sum, t) => sum + t.balance_usd, 0)
+  if (totalValue === 0) return 0
+  
   const allocations = tokens.map(t => (t.balance_usd / totalValue) * 100)
   
   const hhi = allocations.reduce((sum, allocation) => {
@@ -111,12 +127,15 @@ function calculateDiversificationScore(tokens: any[]): number {
   return Math.round((1 - hhi) * 100)
 }
 
-function assessRisk(tokens: any[]): 'Low' | 'Medium' | 'High' {
+function assessRisk(tokens: ExtendedToken[]): 'Low' | 'Medium' | 'High' {
   const score = calculateDiversificationScore(tokens)
   const totalValue = tokens.reduce((sum, t) => sum + t.balance_usd, 0)
-  const largestAllocation = tokens.length > 0
-    ? (tokens[0].balance_usd / totalValue) * 100
-    : 0
+  
+  if (totalValue === 0 || tokens.length === 0) return 'High'
+  
+  // Sort tokens by value to find largest allocation
+  const sortedTokens = [...tokens].sort((a, b) => b.balance_usd - a.balance_usd)
+  const largestAllocation = (sortedTokens[0].balance_usd / totalValue) * 100
   
   if (score >= 70 && largestAllocation < 40) {
     return 'Low'

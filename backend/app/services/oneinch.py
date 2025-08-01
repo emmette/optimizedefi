@@ -107,8 +107,13 @@ class OneInchService:
         endpoint = f"/balance/v2/{chain_id}/balances/{wallet_address}"
         params = {}
         
+        print(f"Fetching balances for {wallet_address} on chain {chain_id}")
+        print(f"API Key present: {bool(self.api_key)}")
+        print(f"Full URL: {self.base_url}{endpoint}")
+        
         try:
             result = await self._make_request("GET", endpoint, params=params)
+            print(f"Balance result for chain {chain_id}: {result}")
             return result
         except Exception as e:
             print(f"Error fetching balances for chain {chain_id}: {e}")

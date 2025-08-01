@@ -79,12 +79,15 @@ async def get_portfolio(
         chains = [1, 137, 10, 42161]  # Ethereum, Polygon, Optimism, Arbitrum
     
     try:
+        print(f"Fetching portfolio for address: {address}, chains: {chains}")
         # Fetch portfolio data from 1inch
         async with oneinch_service as service:
             portfolio_data = await service.get_multi_chain_portfolio(
                 wallet_address=address,
                 chain_ids=chains
             )
+        
+        print(f"Portfolio data received: {portfolio_data}")
         
         # Calculate metrics
         diversification_score = portfolio_metrics_service.calculate_diversification_score(

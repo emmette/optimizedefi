@@ -52,6 +52,12 @@ async def retry_with_backoff(
     for attempt in range(max_retries + 1):
         try:
             return await func()
+        except RateLimitError as e:
+            # Don't count rate limit errors against retry count
+            logger.warning(f"Rate limited: {str(e)}. This won't count against retries.")
+            last_exception = e
+            # RateLimitError already includes the wait, so just retry
+            continue
         except aiohttp.ClientError as e:
             last_exception = e
             if attempt < max_retries:
@@ -71,15 +77,39 @@ async def retry_with_backoff(
     raise last_exception
 
 
+class RateLimiter:
+    """Simple rate limiter for API requests."""
+    
+    def __init__(self, requests_per_second: float = 2.0):
+        self.requests_per_second = requests_per_second
+        self.min_interval = 1.0 / requests_per_second
+        self.last_request_time = 0.0
+        self._lock = asyncio.Lock()
+    
+    async def acquire(self):
+        """Wait if necessary to respect rate limits."""
+        async with self._lock:
+            current_time = time.time()
+            time_since_last = current_time - self.last_request_time
+            
+            if time_since_last < self.min_interval:
+                sleep_time = self.min_interval - time_since_last
+                logger.debug(f"Rate limiting: sleeping for {sleep_time:.2f}s")
+                await asyncio.sleep(sleep_time)
+            
+            self.last_request_time = time.time()
+
+
 class OneInchService:
     """Service for interacting with 1inch APIs."""
     
-    def __init__(self, max_retries: int = 3, initial_delay: float = 1.0):
+    def __init__(self, max_retries: int = 3, initial_delay: float = 1.0, requests_per_second: float = 2.0):
         self.base_url = "https://api.1inch.dev"
         self.api_key = settings.ONEINCH_API_KEY
         self.session: Optional[aiohttp.ClientSession] = None
         self.max_retries = max_retries
         self.initial_delay = initial_delay
+        self.rate_limiter = RateLimiter(requests_per_second)
         
         # Chain configurations - only mainnet chains supported by 1inch
         self.chain_configs = {
@@ -127,6 +157,9 @@ class OneInchService:
         if not self.session:
             raise OneInchAPIError("Session not initialized. Use async context manager.")
         
+        # Apply rate limiting
+        await self.rate_limiter.acquire()
+        
         url = f"{self.base_url}{endpoint}"
         
         async def _request():
@@ -140,8 +173,18 @@ class OneInchService:
                 if response.status == 429:
                     # Rate limited
                     retry_after = response.headers.get('Retry-After', '60')
-                    logger.warning(f"Rate limited. Retry after: {retry_after}s")
-                    raise RateLimitError(f"Rate limited. Retry after: {retry_after}s")
+                    try:
+                        retry_seconds = float(retry_after)
+                    except (ValueError, TypeError):
+                        retry_seconds = 60.0
+                    
+                    logger.warning(f"Rate limited. Retry after: {retry_seconds}s")
+                    
+                    # If we have a specific retry-after time, wait for it
+                    if retry_seconds > 0:
+                        await asyncio.sleep(retry_seconds)
+                    
+                    raise RateLimitError(f"Rate limited. Retry after: {retry_seconds}s")
                 
                 if response.status != 200:
                     error_text = await response.text()
@@ -491,5 +534,10 @@ class OneInchService:
             raise OneInchAPIError(f"Failed to build swap transaction: {str(e)}")
 
 
-# Singleton instance
-oneinch_service = OneInchService()
+# Singleton instance with conservative rate limiting
+# 1inch API limits are not publicly documented, so we use conservative limits
+oneinch_service = OneInchService(
+    max_retries=3,
+    initial_delay=1.0,
+    requests_per_second=1.0  # Conservative: 1 request per second
+)

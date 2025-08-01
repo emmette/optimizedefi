@@ -56,9 +56,13 @@ class AuthMiddleware(BaseHTTPMiddleware):
         
         # For API routes, require authentication unless excluded or read-only
         # Portfolio GET endpoints can be accessed without auth
+        is_portfolio_get = (request.method == "GET" and 
+                           (request.url.path.startswith("/api/portfolio/") or
+                            "/portfolio/" in request.url.path))
+        
         if (request.url.path.startswith("/api/") and 
             not hasattr(request.state, "user") and
-            not (request.method == "GET" and "/portfolio/" in request.url.path)):
+            not is_portfolio_get):
             raise HTTPException(
                 status_code=401,
                 detail="Authentication required"

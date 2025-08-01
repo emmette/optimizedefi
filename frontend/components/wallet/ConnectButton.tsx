@@ -7,6 +7,8 @@ import { Wallet, ChevronDown, LogOut, Copy, ExternalLink, Shield } from 'lucide-
 import { useSiwe } from '@/hooks/useSiwe'
 import { useAuthStore } from '@/store/authStore'
 import { getChainConfig, getBlockExplorerUrl } from '@/lib/chains'
+import { EULAModal } from '@/components/legal/EULAModal'
+import { EULA_VERSION } from '@/components/legal/EULA'
 
 export function ConnectButton() {
   const { address, isConnected, chain } = useAccount()
@@ -15,6 +17,8 @@ export function ConnectButton() {
   const { data: ensName } = useEnsName({ address })
   const [showConnectors, setShowConnectors] = useState(false)
   const [showAccountMenu, setShowAccountMenu] = useState(false)
+  const [showEULA, setShowEULA] = useState(false)
+  const [pendingSignIn, setPendingSignIn] = useState(false)
   
   const chainConfig = chain ? getChainConfig(chain.id) : undefined
   
@@ -27,7 +31,7 @@ export function ConnectButton() {
   
   // SIWE authentication
   const { signIn, signOut, isAuthenticated, isLoading: isAuthLoading } = useSiwe()
-  const checkSession = useAuthStore(state => state.checkSession)
+  const { checkSession, checkEULAVersion, setEULAAccepted } = useAuthStore()
   
   // Check session on mount and auto-prompt for SIWE if needed
   useEffect(() => {
@@ -42,7 +46,7 @@ export function ConnectButton() {
       // Wait a bit for auth state to update
       setTimeout(() => {
         if (mounted && isConnected && !isAuthenticated && !isAuthLoading) {
-          signIn()
+          handleSignIn()
         }
       }, 500)
     }
@@ -52,7 +56,7 @@ export function ConnectButton() {
     return () => {
       mounted = false
     }
-  }, [isConnected, isAuthLoading, isAuthenticated, checkSession, signIn]) // Include all dependencies
+  }, [isConnected, isAuthLoading, isAuthenticated]) // Removed signIn from deps to avoid loop
 
   const formatAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`
@@ -63,6 +67,35 @@ export function ConnectButton() {
       navigator.clipboard.writeText(address)
       // In production, show a toast notification
     }
+  }
+
+  const handleSignIn = async () => {
+    // Check if EULA is accepted
+    if (!checkEULAVersion(EULA_VERSION)) {
+      setPendingSignIn(true)
+      setShowEULA(true)
+      return
+    }
+    
+    // Proceed with sign in
+    await signIn()
+  }
+
+  const handleEULAAccept = () => {
+    setEULAAccepted(EULA_VERSION)
+    setShowEULA(false)
+    
+    // If sign in was pending, continue with it
+    if (pendingSignIn) {
+      setPendingSignIn(false)
+      signIn()
+    }
+  }
+
+  const handleEULADecline = () => {
+    setShowEULA(false)
+    setPendingSignIn(false)
+    // User declined, they won't be able to sign in
   }
 
   if (isConnected && address) {
@@ -130,7 +163,7 @@ export function ConnectButton() {
               {!isAuthenticated && (
                 <button
                   onClick={async () => {
-                    await signIn()
+                    await handleSignIn()
                     setShowAccountMenu(false)
                   }}
                   className="w-full flex items-center justify-center gap-2 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors mb-2"
@@ -205,6 +238,13 @@ export function ConnectButton() {
           </Card>
         </>
       )}
+      
+      {/* EULA Modal */}
+      <EULAModal
+        isOpen={showEULA}
+        onAccept={handleEULAAccept}
+        onDecline={handleEULADecline}
+      />
     </div>
   )
 }

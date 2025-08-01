@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     ONEINCH_API_KEY: str = Field(default="", env="ONEINCH_API_KEY")
     ONEINCH_BASE_URL: str = Field(default="https://api.1inch.io/v6.0", env="ONEINCH_BASE_URL")
     
+    # Alchemy API
+    ALCHEMY_API_KEY: str = Field(default="", env="ALCHEMY_API_KEY")
+    
     # Authentication
     SECRET_KEY: str = Field(default="your-secret-key-here-change-in-production", env="SECRET_KEY")
     JWT_SECRET: str = Field(default="your-secret-key-here", env="JWT_SECRET")

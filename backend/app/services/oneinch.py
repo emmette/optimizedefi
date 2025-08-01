@@ -249,7 +249,7 @@ class OneInchService:
         token_addresses: List[str]
     ) -> Dict[str, Any]:
         """
-        Get current prices for tokens.
+        Get current prices for tokens with batch support.
         
         Args:
             chain_id: Chain ID
@@ -261,23 +261,38 @@ class OneInchService:
         if not token_addresses:
             return {}
         
-        # Updated to use the Spot Price API endpoint
-        endpoint = f"/price/v3/{chain_id}"
-        params = {
-            "tokens": ",".join(token_addresses),
-            "currency": "USD"
-        }
+        # Normalize addresses to lowercase
+        token_addresses = [addr.lower() for addr in token_addresses]
         
-        try:
-            result = await self._make_request("GET", endpoint, params=params)
-            logger.debug(f"Price result for chain {chain_id}: {len(result) if isinstance(result, (list, dict)) else result} items")
-            return result
-        except OneInchAPIError as e:
-            logger.error(f"API error fetching prices for chain {chain_id}: {e}")
-            return {}
-        except Exception as e:
-            logger.error(f"Unexpected error fetching prices for chain {chain_id}: {e}", exc_info=True)
-            return {}
+        # 1inch API has a limit on the number of tokens per request
+        # Split into chunks of 50 tokens
+        chunk_size = 50
+        all_prices = {}
+        
+        for i in range(0, len(token_addresses), chunk_size):
+            chunk = token_addresses[i:i + chunk_size]
+            
+            # Updated to use the Spot Price API endpoint
+            endpoint = f"/price/v3/{chain_id}"
+            params = {
+                "tokens": ",".join(chunk),
+                "currency": "USD"
+            }
+            
+            try:
+                result = await self._make_request("GET", endpoint, params=params)
+                logger.debug(f"Price result for chain {chain_id} (chunk {i//chunk_size + 1}): {len(result) if isinstance(result, (list, dict)) else result} items")
+                
+                # Merge results
+                if isinstance(result, dict):
+                    all_prices.update(result)
+                    
+            except OneInchAPIError as e:
+                logger.error(f"API error fetching prices for chain {chain_id} (chunk {i//chunk_size + 1}): {e}")
+            except Exception as e:
+                logger.error(f"Unexpected error fetching prices for chain {chain_id} (chunk {i//chunk_size + 1}): {e}", exc_info=True)
+        
+        return all_prices
     
     async def get_tokens_info(
         self,

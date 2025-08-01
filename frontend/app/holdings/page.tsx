@@ -7,105 +7,6 @@ import { usePortfolio } from '@/hooks/usePortfolio'
 import { useAccount } from 'wagmi'
 import { HoldingsPageSkeleton } from '@/components/ui/HoldingsSkeleton'
 
-// Mock holdings data
-const mockHoldings = [
-  {
-    id: 1,
-    token: 'ETH',
-    name: 'Ethereum',
-    chain: 'Ethereum',
-    balance: 12.5,
-    value: 45000,
-    price: 3600,
-    change24h: 2.34,
-    allocation: 35.9,
-  },
-  {
-    id: 2,
-    token: 'MATIC',
-    name: 'Polygon',
-    chain: 'Polygon',
-    balance: 15000,
-    value: 32000,
-    price: 2.13,
-    change24h: -1.2,
-    allocation: 25.5,
-  },
-  {
-    id: 3,
-    token: 'OP',
-    name: 'Optimism',
-    chain: 'Optimism',
-    balance: 8500,
-    value: 28432.56,
-    price: 3.35,
-    change24h: 5.67,
-    allocation: 22.7,
-  },
-  {
-    id: 4,
-    token: 'ARB',
-    name: 'Arbitrum',
-    chain: 'Arbitrum',
-    balance: 12000,
-    value: 20000,
-    price: 1.67,
-    change24h: -0.5,
-    allocation: 15.9,
-  },
-  {
-    id: 5,
-    token: 'USDC',
-    name: 'USD Coin',
-    chain: 'Ethereum',
-    balance: 5000,
-    value: 5000,
-    price: 1.0,
-    change24h: 0,
-    allocation: 3.9,
-  },
-  {
-    id: 6,
-    token: 'USDT',
-    name: 'Tether',
-    chain: 'Polygon',
-    balance: 3000,
-    value: 3000,
-    price: 1.0,
-    change24h: 0,
-    allocation: 2.4,
-  },
-  {
-    id: 7,
-    token: 'DAI',
-    name: 'Dai',
-    chain: 'Optimism',
-    balance: 2500,
-    value: 2500,
-    price: 1.0,
-    change24h: 0.01,
-    allocation: 2.0,
-  },
-  {
-    id: 8,
-    token: 'LINK',
-    name: 'Chainlink',
-    chain: 'Ethereum',
-    balance: 150,
-    value: 2250,
-    price: 15.0,
-    change24h: 3.21,
-    allocation: 1.8,
-  },
-]
-
-// Mock chain summary data
-const mockChainSummary = [
-  { chain: 'Ethereum', value: 52250, percentage: 41.7, tokens: 3 },
-  { chain: 'Polygon', value: 35000, percentage: 27.9, tokens: 2 },
-  { chain: 'Optimism', value: 30932.56, percentage: 24.7, tokens: 2 },
-  { chain: 'Arbitrum', value: 20000, percentage: 15.9, tokens: 1 },
-]
 
 export default function HoldingsPage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -187,7 +88,7 @@ export default function HoldingsPage() {
             You're connected to {chain?.name || 'a testnet'}. Holdings tracking is only available on mainnet networks.
           </p>
           <p className="text-sm text-muted-foreground">
-            Please switch to Ethereum, Polygon, Optimism, or Arbitrum mainnet to view your holdings.
+            Please switch to Ethereum, Polygon, Optimism, Arbitrum, Base, Polygon zkEVM, World Chain, or Zora mainnet to view your holdings.
           </p>
         </Card>
       </div>
@@ -348,7 +249,18 @@ export default function HoldingsPage() {
                 <tr key={holding.id} className="border-b border-border hover:bg-accent/50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                      {holding.logo_url ? (
+                        <img 
+                          src={holding.logo_url} 
+                          alt={holding.token}
+                          className="w-10 h-10 rounded-full"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                          }}
+                        />
+                      ) : null}
+                      <div className={`w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center ${holding.logo_url ? 'hidden' : ''}`}>
                         <span className="text-sm font-bold">{holding.token.slice(0, 2)}</span>
                       </div>
                       <div>

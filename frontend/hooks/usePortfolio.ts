@@ -37,6 +37,9 @@ export function usePortfolio(chains?: number[]) {
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
     staleTime: 10000, // Consider data stale after 10 seconds
+    gcTime: 5 * 60 * 1000, // Keep data in cache for 5 minutes
+    refetchOnWindowFocus: false, // Don't refetch when tab gains focus
+    refetchOnReconnect: true // Refetch when connection is restored
   })
 }
 
@@ -60,6 +63,10 @@ export function usePortfolioHistory(period: '24h' | '7d' | '30d' | '90d' | '1y' 
       }
     },
     enabled: !!address,
+    retry: 2,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000),
+    staleTime: 60000, // Consider data stale after 1 minute
+    gcTime: 10 * 60 * 1000, // Keep data in cache for 10 minutes
   })
 }
 

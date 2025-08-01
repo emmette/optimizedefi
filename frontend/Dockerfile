@@ -3,6 +3,9 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Install Python and build tools only for the build stage
+RUN apk add --no-cache python3 make g++ 
+
 # Copy package files
 COPY package*.json ./
 COPY yarn.lock* ./

@@ -14,7 +14,7 @@ export function usePortfolio(chains?: number[]) {
         // Use backend API to fetch portfolio data
         const portfolio = await fetchPortfolio(
           address,
-          chains || [1, 137, 10, 42161] // Default chains
+          chains || [1, 137, 42161, 42170, 10, 8453, 1101, 810180, 7777777] // All supported chains
         )
         
         return portfolio

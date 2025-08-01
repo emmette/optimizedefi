@@ -29,7 +29,17 @@ class Settings(BaseSettings):
     
     # Chain IDs
     SUPPORTED_CHAINS: List[int] = Field(
-        default=[1, 137, 10, 42161],  # Ethereum, Polygon, Optimism, Arbitrum
+        default=[
+            1,        # Ethereum
+            137,      # Polygon
+            42161,    # Arbitrum One
+            42170,    # Arbitrum Nova
+            10,       # Optimism
+            8453,     # Base
+            1101,     # Polygon zkEVM
+            810180,   # World Chain
+            7777777   # Zora
+        ],
         env="SUPPORTED_CHAINS"
     )
     

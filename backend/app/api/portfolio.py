@@ -5,6 +5,7 @@ from datetime import datetime
 
 from app.core.auth import validate_ethereum_address, get_current_user, get_current_user_optional, TokenData
 from app.services.oneinch import oneinch_service
+from app.services.alchemy import alchemy_service
 from app.services.portfolio_metrics import portfolio_metrics_service
 from app.services.cache import cached
 
@@ -80,14 +81,107 @@ async def get_portfolio(
     
     try:
         print(f"Fetching portfolio for address: {address}, chains: {chains}")
-        # Fetch portfolio data from 1inch
-        async with oneinch_service as service:
-            portfolio_data = await service.get_multi_chain_portfolio(
+        
+        # First, fetch actual token balances from Alchemy
+        async with alchemy_service as alchemy:
+            balance_data = await alchemy.get_portfolio_for_all_chains(
                 wallet_address=address,
                 chain_ids=chains
             )
         
-        print(f"Portfolio data received: {portfolio_data}")
+        print(f"Balance data received from Alchemy: {len(balance_data.get('chains', []))} chains")
+        
+        # Then, fetch prices for discovered tokens from 1inch
+        portfolio_data = {
+            "address": address,
+            "chains": [],
+            "total_value_usd": 0,
+            "last_updated": datetime.utcnow().isoformat()
+        }
+        
+        # Process each chain
+        for chain_data in balance_data.get("chains", []):
+            chain_id = chain_data["chain_id"]
+            tokens = chain_data["tokens"]
+            
+            if not tokens:
+                continue
+            
+            # Get token addresses for price lookup (excluding native tokens)
+            token_addresses = [
+                token["address"] for token in tokens 
+                if not token.get("is_native", False) and token["address"] != "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+            ]
+            
+            # Fetch prices from 1inch
+            prices = {}
+            if token_addresses:
+                async with oneinch_service as oneinch:
+                    prices = await oneinch.get_token_prices(chain_id, token_addresses)
+            
+            # For native tokens, we need to get the price separately
+            native_token_price = 0.0
+            for token in tokens:
+                if token.get("is_native", False):
+                    # Get native token price (ETH, MATIC, etc.)
+                    native_price_data = {}
+                    async with oneinch_service as oneinch:
+                        # Use wrapped token address for price lookup
+                        wrapped_addresses = {
+                            1: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",  # WETH on Ethereum
+                            137: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",  # WMATIC on Polygon
+                            10: "0x4200000000000000000000000000000000000006",  # WETH on Optimism
+                            42161: "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",  # WETH on Arbitrum
+                            8453: "0x4200000000000000000000000000000000000006",  # WETH on Base
+                        }
+                        wrapped_address = wrapped_addresses.get(chain_id)
+                        if wrapped_address:
+                            native_price_data = await oneinch.get_token_prices(chain_id, [wrapped_address])
+                            if native_price_data and wrapped_address in native_price_data:
+                                native_token_price = float(native_price_data[wrapped_address].get("price", 0))
+                    break
+            
+            # Build chain portfolio with prices
+            chain_portfolio = {
+                "chain_id": chain_id,
+                "chain_name": chain_data["chain_name"],
+                "tokens": [],
+                "total_value_usd": 0
+            }
+            
+            for token in tokens:
+                # Get price
+                price_usd = 0.0
+                if token.get("is_native", False):
+                    price_usd = native_token_price
+                else:
+                    price_data = prices.get(token["address"], {})
+                    price_usd = float(price_data.get("price", 0))
+                
+                # Calculate value
+                value_usd = token["balance_human"] * price_usd
+                
+                # Add token to portfolio
+                token_data = {
+                    "address": token["address"],
+                    "symbol": token["symbol"],
+                    "name": token["name"],
+                    "decimals": token["decimals"],
+                    "balance": token["balance"],
+                    "balance_human": token["balance_human"],
+                    "price_usd": price_usd,
+                    "value_usd": value_usd,
+                    "logo_url": token.get("logo", "")
+                }
+                
+                chain_portfolio["tokens"].append(token_data)
+                chain_portfolio["total_value_usd"] += value_usd
+            
+            if chain_portfolio["tokens"]:
+                portfolio_data["chains"].append(chain_portfolio)
+                portfolio_data["total_value_usd"] += chain_portfolio["total_value_usd"]
+        
+        print(f"Portfolio data compiled: Total value ${portfolio_data['total_value_usd']:,.2f}")
         
         # Calculate metrics
         diversification_score = portfolio_metrics_service.calculate_diversification_score(

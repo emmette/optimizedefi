@@ -11,6 +11,9 @@ interface AuthState {
   expirationTime: string | null
   isLoading: boolean
   accessToken: string | null
+  eulaAccepted: boolean
+  eulaVersion: string | null
+  eulaAcceptedAt: string | null
   
   // Actions
   setAuth: (data: {
@@ -25,6 +28,8 @@ interface AuthState {
   checkSession: () => Promise<void>
   login: (message: string, signature: string) => Promise<boolean>
   logout: () => Promise<void>
+  setEULAAccepted: (version: string) => void
+  checkEULAVersion: (currentVersion: string) => boolean
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -38,6 +43,9 @@ export const useAuthStore = create<AuthState>()(
       expirationTime: null,
       isLoading: false,
       accessToken: null,
+      eulaAccepted: false,
+      eulaVersion: null,
+      eulaAcceptedAt: null,
       
       // Set authentication data
       setAuth: (data) => {
@@ -158,6 +166,21 @@ export const useAuthStore = create<AuthState>()(
           set({ isLoading: false })
         }
       },
+      
+      // Set EULA accepted
+      setEULAAccepted: (version: string) => {
+        set({
+          eulaAccepted: true,
+          eulaVersion: version,
+          eulaAcceptedAt: new Date().toISOString()
+        })
+      },
+      
+      // Check if current EULA version is accepted
+      checkEULAVersion: (currentVersion: string) => {
+        const state = get()
+        return state.eulaAccepted && state.eulaVersion === currentVersion
+      },
     }),
     {
       name: 'auth-storage',
@@ -167,6 +190,9 @@ export const useAuthStore = create<AuthState>()(
         address: state.address,
         chainId: state.chainId,
         accessToken: state.accessToken,
+        eulaAccepted: state.eulaAccepted,
+        eulaVersion: state.eulaVersion,
+        eulaAcceptedAt: state.eulaAcceptedAt,
       }),
     }
   )
